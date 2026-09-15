@@ -4,6 +4,10 @@
 # Core dependencies
 dataclasses>=0.8; python_version < '3.7'
 
+# .env file support (used to load integration settings such as
+# SAMIGPT_ELASTIC_URL without hardcoding them in source)
+python-dotenv>=1.0.0
+
 # HTTP client for integrations
 requests>=2.31.0
 

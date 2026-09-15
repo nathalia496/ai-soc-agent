@@ -297,43 +297,63 @@ def load_config_from_env_file(env_path: str = ENV_FILE) -> Dict[str, Any]:
         raise ConfigError(f"Failed to load .env file: {e}") from e
 
 
-def _env_dict_to_config(env_dict: Dict[str, Any]) -> SamiConfig:
-    """Convert .env dictionary to SamiConfig."""
-    logging_cfg = LoggingConfig(
-        log_dir=env_dict.get("SAMIGPT_LOG_DIR", "logs"),
-        log_level=env_dict.get("SAMIGPT_LOG_LEVEL", "INFO"),
-    )
+def _apply_env_overrides(config: SamiConfig, env_dict: Dict[str, Any]) -> None:
+    """
+    Apply .env-sourced overrides onto an already-loaded ``SamiConfig`` (e.g.
+    loaded from config.json), in place.
 
-    thehive_cfg: Optional[TheHiveConfig] = None
+    Each integration section is overridden independently, and only when its
+    primary env var(s) are actually present in ``env_dict``. This means a
+    ``.env`` file that only sets ``SAMIGPT_ELASTIC_URL`` (typical for
+    pointing the SIEM integration at a local OpenSearch instance) overrides
+    just the ``elastic`` section — it does NOT wipe out ``thehive``,
+    ``iris``, ``edr``, ``cti``, or ``eng`` sections that came from
+    config.json. This used to not be the case: the previous implementation
+    rebuilt the whole SamiConfig from .env alone, silently discarding every
+    JSON-configured integration whenever a .env file existed at all.
+    """
+
+    if "SAMIGPT_LOG_DIR" in env_dict or "SAMIGPT_LOG_LEVEL" in env_dict:
+        base_logging = config.logging or LoggingConfig()
+        config.logging = LoggingConfig(
+            log_dir=env_dict.get("SAMIGPT_LOG_DIR", base_logging.log_dir),
+            log_level=env_dict.get("SAMIGPT_LOG_LEVEL", base_logging.log_level),
+        )
+
     thehive_url = env_dict.get("SAMIGPT_THEHIVE_URL")
     thehive_api_key = env_dict.get("SAMIGPT_THEHIVE_API_KEY")
     if thehive_url and thehive_api_key:
         timeout = int(env_dict.get("SAMIGPT_THEHIVE_TIMEOUT_SECONDS", "30"))
-        thehive_cfg = TheHiveConfig(
+        config.thehive = TheHiveConfig(
             base_url=thehive_url,
             api_key=thehive_api_key,
             timeout_seconds=timeout,
         )
 
-    iris_cfg: Optional[IrisConfig] = None
     iris_url = env_dict.get("SAMIGPT_IRIS_URL")
     iris_api_key = env_dict.get("SAMIGPT_IRIS_API_KEY")
     if iris_url and iris_api_key:
         timeout = int(env_dict.get("SAMIGPT_IRIS_TIMEOUT_SECONDS", "30"))
         verify_ssl = env_dict.get("SAMIGPT_IRIS_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
-        iris_cfg = IrisConfig(
+        config.iris = IrisConfig(
             base_url=iris_url,
             api_key=iris_api_key,
             timeout_seconds=timeout,
             verify_ssl=verify_ssl,
         )
 
-    elastic_cfg: Optional[ElasticConfig] = None
+    # SIEM (Elastic/OpenSearch). This is the section a local dev .env
+    # typically sets (e.g. SAMIGPT_ELASTIC_URL=http://localhost:9200) to
+    # point the SIEM integration at a local OpenSearch instance, without
+    # hardcoding the URL anywhere and without touching config.json.
     elastic_url = env_dict.get("SAMIGPT_ELASTIC_URL")
     if elastic_url:
         timeout = int(env_dict.get("SAMIGPT_ELASTIC_TIMEOUT_SECONDS", "30"))
+        # DEV-ONLY: SAMIGPT_ELASTIC_VERIFY_SSL=false disables TLS certificate
+        # verification. Only use this for a local/dev OpenSearch/Elasticsearch
+        # instance — never for a production/staging endpoint. See .env.example.
         verify_ssl = env_dict.get("SAMIGPT_ELASTIC_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
-        elastic_cfg = ElasticConfig(
+        config.elastic = ElasticConfig(
             base_url=elastic_url,
             api_key=env_dict.get("SAMIGPT_ELASTIC_API_KEY"),
             username=env_dict.get("SAMIGPT_ELASTIC_USERNAME"),
@@ -342,27 +362,18 @@ def _env_dict_to_config(env_dict: Dict[str, Any]) -> SamiConfig:
             verify_ssl=verify_ssl,
         )
 
-    edr_cfg: Optional[EDRConfig] = None
     edr_url = env_dict.get("SAMIGPT_EDR_URL")
     edr_api_key = env_dict.get("SAMIGPT_EDR_API_KEY")
     if edr_url and edr_api_key:
         timeout = int(env_dict.get("SAMIGPT_EDR_TIMEOUT_SECONDS", "30"))
         verify_ssl = env_dict.get("SAMIGPT_EDR_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
-        edr_cfg = EDRConfig(
+        config.edr = EDRConfig(
             edr_type=env_dict.get("SAMIGPT_EDR_TYPE", "velociraptor"),
             base_url=edr_url,
             api_key=edr_api_key,
             timeout_seconds=timeout,
             verify_ssl=verify_ssl,
         )
-
-    return SamiConfig(
-        thehive=thehive_cfg,
-        iris=iris_cfg,
-        elastic=elastic_cfg,
-        edr=edr_cfg,
-        logging=logging_cfg,
-    )
 
 
 def _ensure_starting_config(config_path: str = CONFIG_FILE, starting_config_path: str = STARTING_CONFIG_FILE) -> None:
@@ -387,9 +398,16 @@ def _ensure_starting_config(config_path: str = CONFIG_FILE, starting_config_path
 
 def load_config_from_file(config_path: str = CONFIG_FILE, env_path: str = ENV_FILE, starting_config_path: str = STARTING_CONFIG_FILE) -> SamiConfig:
     """
-    Load configuration from files. Tries .env file first, then JSON file.
+    Load configuration from files, merging .env on top of the JSON file.
 
-    Priority: .env file > JSON file > starting config > defaults
+    The JSON file (or starting config / defaults, if it doesn't exist) is
+    loaded first as the base configuration. Then, if a .env file exists,
+    each integration section it defines overrides the corresponding JSON
+    section — sections .env doesn't mention are left untouched. This lets a
+    .env that only sets SAMIGPT_ELASTIC_* (e.g. to point the SIEM
+    integration at a local OpenSearch instance) coexist with case
+    management / EDR / CTI / engineering config still defined in
+    config.json, instead of one silently replacing the other.
 
     Args:
         config_path: Path to the JSON configuration file.
@@ -409,46 +427,41 @@ def load_config_from_file(config_path: str = CONFIG_FILE, env_path: str = ENV_FI
     # Ensure config.json exists by copying from starting config if needed
     _ensure_starting_config(config_path, starting_config_path)
 
-    # Try .env file first
-    if env_file.exists():
-        try:
-            env_dict = load_config_from_env_file(env_path)
-            if env_dict:
-                return _env_dict_to_config(env_dict)
-        except Exception as e:
-            # If .env parsing fails, try JSON
-            pass
-
-    # Fall back to JSON file
+    # Base configuration: JSON file, else starting config, else defaults.
+    config: SamiConfig
     if config_file.exists():
         try:
             with open(config_file, "r") as f:
                 data = json.load(f)
-            return _dict_to_config(data)
+            config = _dict_to_config(data)
         except json.JSONDecodeError as e:
             raise ConfigError(f"Invalid JSON in config file: {e}") from e
         except Exception as e:
             raise ConfigError(f"Failed to load config file: {e}") from e
-
-    # Fall back to starting config file
-    if starting_config_file.exists():
+    elif starting_config_file.exists():
         try:
             with open(starting_config_file, "r") as f:
                 data = json.load(f)
-            return _dict_to_config(data)
+            config = _dict_to_config(data)
         except json.JSONDecodeError as e:
             raise ConfigError(f"Invalid JSON in starting config file: {e}") from e
-        except Exception as e:
-            # If starting config fails, continue to defaults
+        except Exception:
+            # If starting config fails, continue with defaults
+            config = SamiConfig(thehive=None, elastic=None, edr=None, logging=LoggingConfig())
+    else:
+        config = SamiConfig(thehive=None, elastic=None, edr=None, logging=LoggingConfig())
+
+    # Apply .env overrides on top, section by section.
+    if env_file.exists():
+        try:
+            env_dict = load_config_from_env_file(env_path)
+            if env_dict:
+                _apply_env_overrides(config, env_dict)
+        except Exception:
+            # If .env parsing fails, keep the JSON-derived config as-is
             pass
 
-    # Return default config if no files exist
-    return SamiConfig(
-        thehive=None,
-        elastic=None,
-        edr=None,
-        logging=LoggingConfig(),
-    )
+    return config
 
 
 def save_config_to_env_file(config: SamiConfig, env_path: str = ENV_FILE) -> None:

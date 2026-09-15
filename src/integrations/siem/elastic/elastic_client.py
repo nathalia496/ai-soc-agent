@@ -1,5 +1,12 @@
 """
 Elasticsearch/Elastic SIEM implementation of the generic ``SIEMClient`` interface.
+
+This also works against OpenSearch (e.g. a local OpenSearch instance at
+http://localhost:9200 for development), since OpenSearch exposes the same
+Elasticsearch-compatible REST and query-DSL API that this client uses.
+Configure the connection via SAMIGPT_ELASTIC_* environment variables /
+.env — see ``core.config.load_elastic_config_from_env`` and
+``.env.example``. The URL is never hardcoded in source.
 """
 
 from __future__ import annotations

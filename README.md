@@ -268,20 +268,38 @@ SamiGPT/
 
 ## Configuration
 
-Configuration is managed through `config.json` and can be edited via the web interface or directly.
+Most integrations (case management, EDR, CTI, engineering) are managed through `config.json` and can be edited via the web interface or directly. **The SIEM (Elastic/OpenSearch) integration is the exception** — it is always configured via environment variables / a `.env` file, and always takes priority over any `elastic` section in `config.json`.
 
+### SIEM (Elastic/OpenSearch) via `.env`
+
+Copy `.env.example` to `.env` (already gitignored) and set at least `SAMIGPT_ELASTIC_URL`. This works against Elasticsearch or OpenSearch — OpenSearch implements the same Elasticsearch-compatible REST/query-DSL API. For a local OpenSearch instance:
+
+```bash
+cp .env.example .env
+```
+
+```dotenv
+# .env
+SAMIGPT_ELASTIC_URL=http://localhost:9200
+# DEV-ONLY: local OpenSearch has no TLS — never disable verification against
+# a real production/staging endpoint.
+SAMIGPT_ELASTIC_VERIFY_SSL=false
+```
+
+The URL is never hardcoded in source — see `src/core/config.py` (`load_elastic_config_from_env`) and `src/mcp/mcp_server.py`, which reads it at startup. If `SAMIGPT_ELASTIC_URL` is unset, the SIEM tools are simply not registered.
 
 ### Configuration File Structure
 
-See `config.json.example` for the complete configuration schema. Key sections:
+See `config.json.example` for the complete configuration schema of the remaining sections:
 
 - `iris` / `thehive`: Case management configuration
-- `elastic`: SIEM configuration
 - `edr`: EDR platform configuration
 - `cti`: Threat intelligence configuration
 - `eng`: Engineering board configuration (ClickUp, Trello, GitHub)
 - `ai_controller`: AI controller web interface settings
 - `logging`: Logging configuration
+
+(`config.json` also has an `elastic` section for backward compatibility with the web UI's configuration manager, but the running MCP server ignores it in favor of `.env` — see above.)
 
 ## Usage Examples
 

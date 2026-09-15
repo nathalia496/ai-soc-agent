@@ -27,8 +27,11 @@ logger = get_logger("sami.integrations.elastic.http")
 class ElasticHttpClient:
     """
     Simple HTTP client for Elasticsearch/Elastic SIEM API.
-    
-    Supports both API key and username/password authentication.
+
+    Supports both API key and username/password authentication. Also works
+    against OpenSearch, since OpenSearch implements the same
+    Elasticsearch-compatible REST/query-DSL API (e.g. a local OpenSearch
+    instance at http://localhost:9200 for development).
     """
 
     base_url: str
@@ -37,6 +40,21 @@ class ElasticHttpClient:
     password: Optional[str] = None
     timeout_seconds: int = 30
     verify_ssl: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.verify_ssl:
+            # SECURITY (dev-only): TLS certificate verification is disabled.
+            # This must ONLY be used for a local/dev Elasticsearch or
+            # OpenSearch instance (e.g. http://localhost:9200, or a
+            # self-signed local HTTPS setup) — never for a staging or
+            # production cluster reachable outside your machine, since it
+            # allows man-in-the-middle attacks. Controlled via
+            # SAMIGPT_ELASTIC_VERIFY_SSL in .env; see .env.example.
+            logger.warning(
+                "Elastic/OpenSearch TLS certificate verification is DISABLED "
+                "(verify_ssl=False). This is only safe for a local/dev "
+                "instance — never use this against a production endpoint."
+            )
 
     def _headers(self) -> Dict[str, str]:
         """Build request headers with authentication."""
@@ -136,6 +154,8 @@ class ElasticHttpClient:
                 json=json_data,
                 params=params,
                 timeout=self.timeout_seconds,
+                # verify_ssl=False (SAMIGPT_ELASTIC_VERIFY_SSL=false) skips TLS
+                # certificate verification — dev-only, see __post_init__ warning.
                 verify=self.verify_ssl,
             )
 

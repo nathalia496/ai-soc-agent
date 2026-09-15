@@ -14,6 +14,17 @@ from typing import Optional
 
 from .errors import ConfigError
 
+try:
+    # Load variables from a local .env file (if present) into the process
+    # environment, so integrations can be configured via os.getenv(...)
+    # without ever hardcoding URLs/credentials in source. This does not
+    # override variables that are already set in the real environment.
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:  # pragma: no cover - python-dotenv is an optional dep
+    pass
+
 
 @dataclass
 class TheHiveConfig:
@@ -181,6 +192,68 @@ def _require_env(name: str) -> str:
     return value
 
 
+def load_elastic_config_from_env() -> Optional[ElasticConfig]:
+    """
+    Build an ``ElasticConfig`` purely from environment variables (typically
+    populated from a local ``.env`` file via ``python-dotenv``).
+
+    This is how the SIEM integration connects to a local OpenSearch/Elastic
+    instance for development: the URL is never hardcoded in source, it is
+    always read from ``SAMIGPT_ELASTIC_URL`` (see ``.env.example``).
+
+    Environment variables:
+        SAMIGPT_ELASTIC_URL: Base URL of the Elasticsearch/OpenSearch
+            cluster (e.g. "http://localhost:9200" for a local OpenSearch
+            instance). Required — if unset, this function returns None and
+            the SIEM integration is treated as not configured.
+        SAMIGPT_ELASTIC_API_KEY: Optional API key for authentication.
+        SAMIGPT_ELASTIC_USERNAME / SAMIGPT_ELASTIC_PASSWORD: Optional basic
+            auth credentials.
+        SAMIGPT_ELASTIC_TIMEOUT_SECONDS: Request timeout (default: 30).
+        SAMIGPT_ELASTIC_VERIFY_SSL: Whether to verify TLS certificates
+            (default: "true"). Set to "false" ONLY for local/dev clusters
+            reached over plain HTTP or with a self-signed certificate —
+            never disable certificate verification against a production or
+            internet-facing OpenSearch/Elasticsearch endpoint.
+
+    Returns:
+        ElasticConfig if SAMIGPT_ELASTIC_URL is set, otherwise None.
+    """
+
+    base_url = os.getenv("SAMIGPT_ELASTIC_URL")
+    if not base_url:
+        return None
+
+    timeout_raw = os.getenv("SAMIGPT_ELASTIC_TIMEOUT_SECONDS", "30")
+    try:
+        timeout_seconds = int(timeout_raw)
+    except ValueError as exc:
+        raise ConfigError(
+            "SAMIGPT_ELASTIC_TIMEOUT_SECONDS must be an integer"
+        ) from exc
+
+    # DEV-ONLY SWITCH: SAMIGPT_ELASTIC_VERIFY_SSL=false disables TLS
+    # certificate verification for the SIEM HTTP client. This is only meant
+    # for connecting to a local OpenSearch/Elasticsearch instance (e.g.
+    # http://localhost:9200, or a self-signed local HTTPS setup). Never set
+    # this to "false" for a staging/production cluster reachable outside
+    # your machine — doing so allows man-in-the-middle attacks.
+    verify_ssl = os.getenv("SAMIGPT_ELASTIC_VERIFY_SSL", "true").strip().lower() not in (
+        "false",
+        "0",
+        "no",
+    )
+
+    return ElasticConfig(
+        base_url=base_url,
+        api_key=os.getenv("SAMIGPT_ELASTIC_API_KEY"),
+        username=os.getenv("SAMIGPT_ELASTIC_USERNAME"),
+        password=os.getenv("SAMIGPT_ELASTIC_PASSWORD"),
+        timeout_seconds=timeout_seconds,
+        verify_ssl=verify_ssl,
+    )
+
+
 def load_config() -> SamiConfig:
     """
     Load SamiGPT configuration from environment variables.
@@ -190,11 +263,18 @@ def load_config() -> SamiConfig:
         SAMIGPT_THEHIVE_API_KEY: API key/token for TheHive.
         SAMIGPT_THEHIVE_TIMEOUT_SECONDS: Request timeout for TheHive (default: 30).
 
+        SAMIGPT_ELASTIC_URL: Base URL for the Elasticsearch/OpenSearch SIEM
+            backend (e.g. "http://localhost:9200" for local OpenSearch).
+            See load_elastic_config_from_env() for the full list of
+            SAMIGPT_ELASTIC_* variables (API key, basic auth, timeout,
+            verify_ssl). See .env.example.
+
         SAMIGPT_LOG_DIR: Directory for log files (default: "logs").
         SAMIGPT_LOG_LEVEL: Root log level (default: "INFO").
 
-    If TheHive variables are not set, the configuration will still be returned
-    with `thehive` set to None, allowing you to run without that integration.
+    If TheHive/Elastic variables are not set, the configuration will still be
+    returned with `thehive`/`elastic` set to None, allowing you to run
+    without those integrations.
     """
 
     # Logging config
@@ -234,8 +314,15 @@ def load_config() -> SamiConfig:
     else:
         thehive_cfg = None
 
+    # Elastic/OpenSearch SIEM config (optional). See
+    # load_elastic_config_from_env() for the supported environment
+    # variables — the URL is always read from SAMIGPT_ELASTIC_URL, never
+    # hardcoded here.
+    elastic_cfg = load_elastic_config_from_env()
+
     return SamiConfig(
         thehive=thehive_cfg,
+        elastic=elastic_cfg,
         logging=logging_cfg,
     )
 

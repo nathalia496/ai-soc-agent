@@ -3499,9 +3499,15 @@ async def _read_stdio():
 
 async def main() -> None:
     """Main entry point for the MCP server."""
-    # Load configuration from JSON file only (ignore .env)
+    # Load configuration from JSON file (config.json). The SIEM (Elastic/
+    # OpenSearch) section is the exception: it is always sourced from
+    # SAMIGPT_ELASTIC_* environment variables / a local .env file (see
+    # load_elastic_config_from_env() below and .env.example), never
+    # hardcoded and never read from config.json, so you can point this
+    # server at a local OpenSearch instance without editing config.json.
     import json
     from pathlib import Path
+    from ..core.config import load_elastic_config_from_env
     from ..core.config_storage import _dict_to_config
     
     # Find config.json relative to project root (where this file is located)
@@ -3547,7 +3553,21 @@ async def main() -> None:
             edr=None,
             logging=LoggingConfig(),
         )
-    
+
+    # SIEM (Elastic/OpenSearch) configuration always comes from environment
+    # variables / .env, taking priority over any "elastic" section in
+    # config.json. This is what lets you connect to a local OpenSearch
+    # instance (e.g. SAMIGPT_ELASTIC_URL=http://localhost:9200 in .env)
+    # without hardcoding a URL anywhere in source or in config.json.
+    env_elastic_config = load_elastic_config_from_env()
+    if env_elastic_config is not None:
+        if config.elastic is not None:
+            logger.info(
+                "SAMIGPT_ELASTIC_URL is set — overriding config.json 'elastic' "
+                "section with environment-variable-based SIEM configuration"
+            )
+        config.elastic = env_elastic_config
+
     configure_logging(config.logging)
     
     # Configure dedicated MCP logging
