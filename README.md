@@ -91,9 +91,9 @@ The platform enables automated triage, investigation, correlation, and response 
 - **Automated Alert Triage**: Intelligent initial assessment and classification of security alerts
 - **Case Management**: Create, update, and manage security cases with observables, comments, and timeline tracking
 - **SIEM Integration**: Search security events, pivot on indicators, and correlate activities across environments
-- **EDR Response**: Endpoint isolation, process termination, and forensic artifact collection
+- **EDR Investigation (read-only)**: Endpoint and detection lookup for context/enrichment. SamiGPT does **not** isolate endpoints, kill processes, or trigger forensic collection — see [Active response actions removed](#active-response-actions-removed).
 - **Threat Intelligence**: IOC enrichment and reputation analysis
-- **Multi-Tier SOC Workflows**: Structured workflows for SOC1 (triage) and SOC2 (investigation)
+- **Multi-Tier SOC Workflows**: Structured workflows for SOC1 (triage), SOC2 (investigation), and SOC3 (IR-level analysis and recommendations)
 
 ### Agent Profiles & Runbooks
 
@@ -101,6 +101,43 @@ SamiGPT includes pre-configured agent profiles with specialized runbooks:
 
 - **SOC1 Agents**: Initial alert triage, enrichment, and false positive identification
 - **SOC2 Agents**: Deep investigation, correlation, and case analysis
+- **SOC3 Agents**: IR-level analysis that produces containment/forensics **recommendations** for a human analyst to execute — it never performs the response action itself (see [Active response actions removed](#active-response-actions-removed))
+
+## Active response actions removed
+
+**SamiGPT is a read-only/advisory agent.** It investigates, enriches, and documents findings and recommendations — it must never take an active response action on a production system by itself (isolating a host, killing a process, blocking an IP, triggering forensic collection, etc.). This is enforced as a platform policy, not just a prompt instruction.
+
+### What was removed/disabled and why
+
+The EDR (Elastic Defend) integration previously exposed four "response action" tools that could change state on a live endpoint. They have been removed or disabled across every layer of the stack so the agent can no longer reach them, even indirectly:
+
+| Removed/disabled tool | What it did | Where it was removed/disabled |
+| --- | --- | --- |
+| `isolate_endpoint` | Disconnected a host from the network (quarantine) | Tool removed from `src/orchestrator/tools_edr.py` and from the MCP tool registry/dispatcher in `src/mcp/mcp_server.py`; underlying method disabled (raises an error) in `src/integrations/edr/elastic_defend/elastic_defend_client.py` |
+| `release_endpoint_isolation` | Restored network connectivity to a previously isolated host | Same as above |
+| `kill_process_on_endpoint` | Terminated a running process on an endpoint by PID | Same as above |
+| `collect_forensic_artifacts` | Triggered the EDR agent to collect forensic artifacts (processes, network, filesystem, etc.) from an endpoint | Same as above |
+
+Concretely, the change spans:
+
+- **`src/integrations/edr/elastic_defend/elastic_defend_client.py`** — the four methods no longer call the Elastic Defend API. They immediately raise an `IntegrationError` explaining the policy, so even a direct/future caller cannot reach the vendor endpoint. This is the last line of defense.
+- **`src/api/edr.py`** — the generic `EDRClient` interface (`Protocol`) no longer declares these methods; it only defines read operations (`get_endpoint_summary`, `list_endpoints`, `get_detection_details`, `list_detections`).
+- **`src/orchestrator/tools_edr.py`** — the LLM-callable wrapper functions for these four actions were deleted entirely. Only `get_endpoint_summary` and `get_detection_details` remain.
+- **`src/mcp/mcp_server.py`** — the four tools are no longer registered in the MCP tool list (`_register_edr_tools`) and their dispatch branches were removed from the tool-execution switch. An MCP client (Claude Desktop, Cursor, etc.) connected to this server will not see these tools at all.
+- **`config/agent_profiles.json`**, **`src/mcp/agent_profiles.py`**, **`src/mcp/flow_agent_profiles.py`** — the SOC3 agent profile ("SOC3 Response Agent") no longer lists these tools, and its `decision_authority.containment_actions` / `decision_authority.forensic_collection` flags are now `false`. Its capabilities were renamed from `containment_execution`/`forensic_collection` to `containment_recommendations`/`forensic_collection_recommendations` to reflect that it recommends, not executes.
+- **`run_books/soc3/`** — the SOC3 runbooks and guidelines (`guidelines.md`, `response/endpoint_isolation.md`, `response/process_termination.md`, `forensics/artifact_collection.md`) were rewritten so the agent's workflow ends at producing a documented recommendation and a case task assigned to a human analyst, instead of instructing it to call an action tool.
+
+### Why
+
+An autonomous agent that can disconnect a production host, kill an arbitrary process by PID, or trigger data collection on an endpoint is a significant blast-radius risk if it misclassifies an alert, hallucinates a tool call, or is manipulated via prompt injection from ingested alert/log data. Keeping SamiGPT strictly read-only + advisory means:
+
+- A wrong decision produces a wrong **recommendation**, which a human reviews before anything happens on a real system.
+- There is no code path — not the LLM prompt, not a runbook, not a tool schema — through which the agent can reach a destructive EDR action.
+
+### What still works
+
+- Full investigation/enrichment: case management, SIEM search/pivoting, CTI hash lookups, and **read-only** EDR lookups (`get_endpoint_summary`, `get_detection_details`).
+- SOC3 still exists as an IR-level expert tier: it reviews evidence and produces a clearly documented isolation / process-termination / forensic-collection **recommendation** and case task — a human analyst always performs the actual action.
 
 ## Workflows
 
@@ -282,21 +319,19 @@ report = get_file_report(file_hash="abc123...")
 related_events = pivot_on_indicator("192.168.1.100")
 ```
 
-### EDR Response
+### EDR Investigation (read-only)
 
 ```python
 # Get endpoint summary
 endpoint = get_endpoint_summary(endpoint_id="host-123")
 
-# Isolate an endpoint
-isolate_endpoint(endpoint_id="host-123")
-
-# Collect forensic artifacts
-collect_forensic_artifacts(
-    endpoint_id="host-123",
-    artifact_types=["processes", "network", "filesystem"]
-)
+# Get detection details
+detection = get_detection_details(detection_id="detection-456")
 ```
+
+> There is no `isolate_endpoint`, `release_endpoint_isolation`, `kill_process_on_endpoint`, or
+> `collect_forensic_artifacts` tool. Active response actions were removed — see
+> [Active response actions removed](#active-response-actions-removed).
 
 ### Agent Profile Execution
 

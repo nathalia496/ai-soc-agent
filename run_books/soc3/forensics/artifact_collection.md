@@ -1,41 +1,44 @@
-# SOC3: Forensic Artifact Collection Runbook
+# SOC3: Forensic Artifact Collection Recommendation Runbook
 
-Initiate collection of forensic artifacts from an endpoint for incident investigation and analysis. This runbook guides SOC3 (IR-level expert) analysts in collecting comprehensive forensic data. SOC3 reviews case context from SOC1 and SOC2 before initiating collection.
+Produce a documented, actionable **recommendation** for which forensic artifacts should be collected from an endpoint, for a human analyst/IT operator to trigger manually in the EDR console. This runbook guides SOC3 (IR-level expert) analysts in scoping comprehensive forensic data collection. SOC3 reviews case context from SOC1 and SOC2 before making the recommendation.
+
+> **IMPORTANT — read-only/advisory agent:** SamiGPT does **not** trigger forensic artifact collection itself. There is no `collect_forensic_artifacts` tool available to the agent anymore — active response actions were intentionally removed (see project `README.md`, section "Active response actions removed"). This runbook's output is a **recommendation and a case task**, never a triggered collection.
 
 ## Scope
 
 This runbook covers:
-*   Forensic artifact collection procedures.
-*   Selection of artifact types to collect.
-*   Documentation of collection actions.
+*   Reviewing case context to determine which artifact types are relevant.
+*   Producing a clear, auditable collection **recommendation**.
+*   Creating a case task for a human analyst to trigger the collection.
 
 ## SOC Tier
 
 **Tier:** SOC3 (Tier 3)
+**Authority:** SOC3 may only **recommend** which artifacts to collect. It has no authority or tooling to trigger collection itself.
 
 ## Inputs
 
-*   `${ENDPOINT_ID}`: The endpoint ID to collect artifacts from.
+*   `${ENDPOINT_ID}`: The endpoint ID to recommend collecting artifacts from.
 *   `${CASE_ID}`: The relevant case ID for documentation.
-*   `${ARTIFACT_TYPES}`: List of artifact types to collect (default: ["processes", "network", "filesystem"]).
+*   `${ARTIFACT_TYPES}`: List of artifact types recommended for collection (default: ["processes", "network", "filesystem"]).
     *   Available types: `processes`, `network`, `filesystem`, `registry`, `memory`, `logs`
 
 ## Outputs
 
-*   `${COLLECTION_STATUS}`: Status of the collection operation.
-*   `${ARTIFACTS_COLLECTED}`: List of artifacts collected.
+*   `${RECOMMENDATION_STATUS}`: Whether a recommendation was produced and documented.
+*   `${ARTIFACT_TYPES}`: The recommended artifact types.
 *   `${DOCUMENTATION_STATUS}`: Status of documentation.
 
 ## Tools
 
-*   **EDR Tools:** `get_endpoint_summary`, `collect_forensic_artifacts`
-*   **Case Management Tools:** `review_case`, `add_case_comment`, `update_case_status`, `list_case_tasks`, `update_case_task_status`
+*   **EDR Tools (read-only):** `get_endpoint_summary`
+*   **Case Management Tools:** `review_case`, `add_case_comment`, `add_case_task`, `update_case_status`, `list_case_tasks`, `update_case_task_status`
 *   **Knowledge Base Tools:** `kb_list_clients`, `kb_get_client_infra`
 
 ## Workflow Steps
 
 1.  **Receive Case & Review Context (MANDATORY):**
-    *   Obtain `${ENDPOINT_ID}`, `${CASE_ID}`, and `${ARTIFACT_TYPES}`.
+    *   Obtain `${ENDPOINT_ID}`, `${CASE_ID}`, and `${ARTIFACT_TYPES}` (if provided).
     *   **MUST use `review_case` with `case_id=${CASE_ID}` as the FIRST action.**
     *   **Read ALL case details:**
         *   Case title, description, status, priority, tags
@@ -44,26 +47,17 @@ This runbook covers:
         *   Review SOC1 alert details and SOC2 investigation findings
     *   **Review case timeline**: Use `list_case_timeline_events` to understand case history.
     *   If `${ARTIFACT_TYPES}` not provided, use default: `["processes", "network", "filesystem"]`.
-    *   **Task Management:**
-        *   Use `list_case_tasks` with `case_id=${CASE_ID}` to find ALL tasks assigned to SOC3 (e.g., "Forensic Artifact Collection").
-        *   Review tasks from SOC1 and SOC2 to understand investigation context and what artifacts are needed.
-        *   For each relevant task found, use `update_case_task_status` with `task_id=<TASK_ID>`, `status="in_progress"` to mark it as in-progress when starting the collection.
     *   **Determine artifact types based on case context**: Review SOC1 and SOC2 findings to determine what artifacts are most relevant.
     *   **Knowledge Base Context:**
         *   Use `kb_list_clients` to list available client environments.
         *   If client name is known from case context, use `kb_get_client_infra` with `client_name=<CLIENT_NAME>` to get infrastructure knowledge.
-        *   If client name is unknown, check case observables/comments for client identifiers, or query knowledge base for "all" clients if needed.
-        *   Use knowledge base to understand:
-            *   Endpoint context and criticality
-            *   Expected artifact locations and patterns
-            *   Infrastructure-specific collection considerations
+        *   Use knowledge base to understand endpoint context/criticality, expected artifact locations, and infrastructure-specific considerations.
 
-2.  **Get Endpoint Information:**
+2.  **Get Endpoint Information (read-only):**
     *   Use `get_endpoint_summary` with `endpoint_id=${ENDPOINT_ID}`.
     *   Verify endpoint details: hostname, platform, current status.
-    *   **Note:** Artifact collection can be performed on isolated or active endpoints.
 
-3.  **Determine Artifact Types:**
+3.  **Determine Recommended Artifact Types:**
     *   Based on case requirements, select appropriate artifact types:
         *   **processes**: Running processes and process trees
         *   **network**: Network connections and DNS queries
@@ -73,37 +67,31 @@ This runbook covers:
         *   **logs**: System logs and event logs
     *   Store selected types in `${ARTIFACT_TYPES}`.
 
-4.  **Execute Artifact Collection:**
-    *   Use `collect_forensic_artifacts` with `endpoint_id=${ENDPOINT_ID}` and `artifact_types=${ARTIFACT_TYPES}`.
-    *   Wait for collection completion confirmation.
-    *   Set `${COLLECTION_STATUS}` = "Artifacts collected successfully" or "Collection failed: [error]".
-    *   Store collected artifacts list in `${ARTIFACTS_COLLECTED}`.
+4.  **Produce the Collection Recommendation:**
+    *   Do **not** call any artifact-collection tool — none exists for this agent.
+    *   Create a case task describing exactly what a human operator should collect, e.g. `SOC3 – RECOMMENDATION: Collect Forensic Artifacts (${ARTIFACT_TYPES}) from ${ENDPOINT_ID}`, using `add_case_task` with `assignee` set to the human on-call analyst/forensics team (not SamiGPT).
+    *   Set `${RECOMMENDATION_STATUS}` = "Collection recommended, pending human execution".
 
-5.  **Document Collection:**
-    *   Prepare collection comment: `COLLECTION_COMMENT = "SOC3 (IR Expert) Forensic Artifact Collection for Case ${CASE_ID}: Endpoint ID: ${ENDPOINT_ID}. Artifact Types Collected: ${ARTIFACT_TYPES}. Collection Status: ${COLLECTION_STATUS}. **Case Context Reviewed:** [summary of SOC1/SOC2 findings that informed artifact selection]. Infrastructure Context (KB): [...]. Collected at: [timestamp]. Artifacts: ${ARTIFACTS_COLLECTED}. **Note:** Forensic artifacts have been collected. Analysis should follow."`
+5.  **Document the Recommendation:**
+    *   Prepare recommendation comment: `RECOMMENDATION_COMMENT = "SOC3 (IR Expert) Forensic Artifact Collection RECOMMENDATION for Case ${CASE_ID}: Endpoint ID: ${ENDPOINT_ID}. Recommended Artifact Types: ${ARTIFACT_TYPES}. **Case Context Reviewed:** [summary of SOC1/SOC2 findings that informed artifact selection]. Infrastructure Context (KB): [...]. **This is a recommendation only — SamiGPT does not trigger artifact collection. A human analyst must initiate collection manually via the EDR console and attach the resulting artifacts as case evidence.**"`
     *   Include knowledge base findings (endpoint context, infrastructure considerations) in the comment.
-    *   Document what case context was reviewed and why specific artifact types were selected.
-    *   Use `add_case_comment` with `case_id=${CASE_ID}` and `content=${COLLECTION_COMMENT}`.
+    *   Use `add_case_comment` with `case_id=${CASE_ID}` and `content=${RECOMMENDATION_COMMENT}`.
     *   Set `${DOCUMENTATION_STATUS}` = "Documented".
-    *   **Task Management:**
-        *   Use `update_case_task_status` with `task_id=<TASK_ID>`, `status="completed"` to mark the collection task as completed when finishing.
 
 6.  **Next Steps:**
-    *   **Note:** After collection, consider:
-        *   Artifact analysis
-        *   Timeline reconstruction
-        *   Attack chain analysis
-        *   Remediation planning
-        *   Incident reporting
+    *   **Note:** After the recommendation is documented, a human analyst should:
+        *   Trigger the collection manually via the EDR console.
+        *   Attach the collected artifacts to the case using `add_case_evidence`.
+        *   Proceed with artifact analysis, timeline reconstruction, and attack chain analysis.
 
 ## Completion Criteria
 
-The forensic artifacts have been successfully collected:
-*   Endpoint information has been verified.
-*   Artifact types have been determined.
-*   Collection action has been executed.
-*   Collection status has been documented.
-*   Next steps have been identified.
+A recommendation has been successfully produced:
+*   Endpoint information has been verified (read-only).
+*   Artifact types have been determined and justified from case context.
+*   A clear, evidence-backed collection recommendation has been documented in the case.
+*   A case task has been created assigning the manual collection to a human analyst.
+*   No collection tool was called by the agent.
 
 ## Artifact Type Selection Guide
 
@@ -118,12 +106,7 @@ The forensic artifacts have been successfully collected:
 
 ## Notes
 
-*   **SOC3 acts as IR-level expert**: Review case context from SOC1 and SOC2 to determine appropriate artifact types.
+*   **SOC3 acts as IR-level expert, in an advisory capacity only**: it reviews case context from SOC1 and SOC2 to recommend appropriate artifact types — it does not trigger collection itself.
 *   **Review ALL case details first**: Read SOC1 and SOC2 findings to understand what artifacts are most relevant.
-*   Artifact collection may take time depending on endpoint and artifact types.
-*   Ensure sufficient storage for collected artifacts.
-*   Document all collected artifacts for chain of custody.
 *   Document what case context informed artifact selection decisions.
-*   Coordinate with forensic analysis team if needed.
-*   **Provide guidance if needed**: If case needs additional investigation before collection, provide guidance to SOC1/SOC2.
-
+*   **Provide guidance if needed**: If the case needs additional investigation before a collection recommendation can be made, provide guidance to SOC1/SOC2.

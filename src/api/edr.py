@@ -2,8 +2,16 @@
 Generic EDR API for SamiGPT.
 
 This module defines vendor-neutral DTOs and the ``EDRClient`` interface
-that orchestrator code and LLM tools will use for endpoint investigation
-and response actions.
+that orchestrator code and LLM tools use for endpoint investigation.
+
+SamiGPT policy: the agent is read-only/advisory for EDR. Active response
+actions (endpoint isolation, process termination, forensic collection,
+etc.) are intentionally NOT part of this interface — the agent must only
+retrieve data and produce recommendations for a human analyst to execute.
+The ``QuarantineAction``, ``KillProcessAction`` and
+``ArtifactCollectionRequest`` DTOs are kept only because vendor client
+implementations still reference them on their now-disabled methods; see
+``src/integrations/edr/elastic_defend/elastic_defend_client.py``.
 """
 
 from __future__ import annotations
@@ -135,15 +143,16 @@ class ArtifactCollectionRequest(BaseDTO):
 
 class EDRClient(Protocol):
     """
-    Vendor-neutral interface for EDR operations.
+    Vendor-neutral, read-only interface for EDR operations.
 
-    This interface is designed to support the skills described in the README:
+    This interface is intentionally limited to investigation/enrichment:
     - get_endpoint_summary
+    - list_endpoints
     - get_detection_details
-    - isolate_endpoint
-    - release_endpoint_isolation
-    - kill_process_on_endpoint
-    - collect_forensic_artifacts
+    - list_detections
+
+    Active response actions (isolation, process termination, forensic
+    collection) are NOT part of this interface. See module docstring.
     """
 
     # Endpoint and detection retrieval
@@ -161,27 +170,6 @@ class EDRClient(Protocol):
         endpoint_id: Optional[str] = None,
         limit: int = 50,
     ) -> List[Detection]:
-        ...
-
-    # Response actions
-    def isolate_endpoint(self, endpoint_id: str) -> QuarantineAction:
-        ...
-
-    def release_endpoint_isolation(self, endpoint_id: str) -> QuarantineAction:
-        ...
-
-    def kill_process_on_endpoint(
-        self,
-        endpoint_id: str,
-        pid: int,
-    ) -> KillProcessAction:
-        ...
-
-    def collect_forensic_artifacts(
-        self,
-        endpoint_id: str,
-        artifact_types: List[str],
-    ) -> ArtifactCollectionRequest:
         ...
 
 

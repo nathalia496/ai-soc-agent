@@ -26,11 +26,12 @@ This document provides general guidelines for creating, maintaining, and executi
 *   **Must be capable of** fetching more events from SIEM, running deeper investigations, pivoting on hosts, users, IPs, and timelines, and updating the case with findings.
 *   Use `review_case` as the FIRST step, then `list_case_tasks` to identify pending work.
 
-### SOC3 (Tier 3) - IR-Level Expert
-*   **Acts as the IR-level expert** handling advanced investigations, response actions, containment, and eradication steps.
-*   **Confirms malicious activity when evidence is strong** before taking disruptive actions.
+### SOC3 (Tier 3) - IR-Level Expert (Recommendation Only)
+*   **Acts as the IR-level expert** handling advanced investigations and producing containment/eradication **recommendations**.
+*   **Never executes disruptive actions**: SamiGPT has no tools to isolate an endpoint, kill a process, or trigger forensic collection. SOC3 produces a documented recommendation and a case task for a human analyst to execute instead.
+*   **Confirms malicious activity when evidence is strong** before recommending disruptive actions.
 *   **Should guide SOC1 and SOC2** on complex cases when needed.
-*   Reviews case context from SOC1 and SOC2 before executing response actions.
+*   Reviews case context from SOC1 and SOC2 before producing response recommendations.
 *   Use `review_case` as the FIRST step to understand full context and evidence.
 
 ## Required Structure
@@ -73,7 +74,7 @@ Runbooks are structured markdown documents that the MCP server parses for metada
         *   **Case Management Tools:** `review_case`, `add_case_comment`, `attach_observable_to_case`, `search_cases`, `update_case_status`, `add_case_task`.
         *   **SIEM Tools:** `get_security_alert_by_id`, `search_security_events`, `lookup_entity`, `get_ioc_matches`, `get_file_report`, `get_ip_address_report`, `pivot_on_indicator`, `get_entities_related_to_file`, `get_file_behavior_summary`, `get_threat_intel`.
         *   **CTI Tools:** `lookup_hash_ti` (and others as applicable).
-        *   **EDR Tools:** `get_endpoint_summary`, `isolate_endpoint`, `kill_process_on_endpoint`, `collect_forensic_artifacts` (where relevant).
+        *   **EDR Tools (read-only only — no active response tools exist):** `get_endpoint_summary`, `get_detection_details` (where relevant).
         *   **Runbook & Agent Tools (when applicable):** `list_runbooks`, `get_runbook`, `execute_runbook`, `list_agent_profiles`, `get_agent_profile`, `route_case_to_agent`, `execute_as_agent`.
     *   Tool names **must** be wrapped in backticks (`` `tool_name` ``) so `RunbookManager` can extract them.
 
@@ -92,7 +93,7 @@ Runbooks are structured markdown documents that the MCP server parses for metada
     *   Make decisions and branching explicit (e.g., "If IOC matches found, escalate to SOC2", "If endpoint already isolated, skip isolation step and document.").
     *   **For SOC1**: Document that if uncertain about legitimacy, leave as open case with ALL alert details.
     *   **For SOC2**: Document that additional events should be fetched from SIEM, pivots should be performed, and case should be updated with findings.
-    *   **For SOC3**: Document that evidence should be confirmed strong before taking disruptive actions, and guidance should be provided to SOC1/SOC2 if needed.
+    *   **For SOC3**: Document that evidence should be confirmed strong before recommending disruptive actions (never executing them), and guidance should be provided to SOC1/SOC2 if needed.
 
 *   **Completion Criteria (`## Completion Criteria`):**
     *   Bullet list describing when the runbook is considered successfully completed.
@@ -109,14 +110,14 @@ Runbooks are structured markdown documents that the MCP server parses for metada
     *   Clearly enumerate when to escalate to higher tiers (e.g., SOC1 → SOC2, SOC2 → SOC3).
     *   **SOC Tier-Specific Escalation Requirements:**
         *   **SOC1 → SOC2**: When uncertain about legitimacy (leave as open case with ALL alert details) OR when suspicious/true positive indicators found.
-        *   **SOC2 → SOC3**: When active threat confirmed and containment actions needed, OR when case requires IR-level expertise.
-        *   **SOC3 guidance to SOC1/SOC2**: When case needs additional analysis before response actions, or when complex investigation guidance is needed.
+        *   **SOC2 → SOC3**: When active threat confirmed and a containment recommendation is needed, OR when case requires IR-level expertise.
+        *   **SOC3 guidance to SOC1/SOC2**: When case needs additional analysis before a response recommendation, or when complex investigation guidance is needed.
     *   Examples from existing runbooks:
         *   "True positive indicators are found…"
         *   "Active threat confirmed…"
         *   "Multiple endpoints affected…"
         *   "Uncertain about legitimacy - leave as open case with comprehensive alert details…"
-        *   "Evidence confirmed strong - proceed with containment…"
+        *   "Evidence confirmed strong - proceed with a containment recommendation for a human analyst to execute…"
 
 *   **Warnings / Notes (`## Warning`, `## Notes`) (optional but recommended):**
     *   Capture important safety warnings (e.g., disruptive actions like isolation or process termination).
@@ -124,7 +125,7 @@ Runbooks are structured markdown documents that the MCP server parses for metada
     *   **SOC Tier-Specific Notes:**
         *   **SOC1**: Emphasize "MUST ALWAYS START FROM `${ALERT_ID}`", "If uncertain leave as open case with ALL alert details", "Primary role is closing false positives".
         *   **SOC2**: Emphasize "MUST ALWAYS START FROM `${CASE_ID}`", "Read ALL case details first", "Complete pending tasks", "Fetch additional events from SIEM", "Update case with findings".
-        *   **SOC3**: Emphasize "IR-level expert", "Confirm evidence is strong", "Review ALL case details", "Provide guidance to SOC1/SOC2 if needed".
+        *   **SOC3**: Emphasize "IR-level expert (recommendation only)", "Never executes disruptive actions", "Confirm evidence is strong", "Review ALL case details", "Provide guidance to SOC1/SOC2 if needed".
 
 ## Workflow Diagrams (Recommended)
 
@@ -135,7 +136,7 @@ Runbooks **may** include a Mermaid sequence diagram to visualize the workflow, e
         *   **Analyst/Agent** (human or autonomous agent).
         *   **MCP Server** (SamiGPT runbook/agent tools).
         *   **Domain Integrations** (case management, SIEM, EDR, CTI).
-    *   Focus on the **actual tools** invoked (e.g., `execute_as_agent`, `execute_runbook`, `review_case`, `search_security_events`, `isolate_endpoint`), not generic placeholders.
+    *   Focus on the **actual tools** invoked (e.g., `execute_as_agent`, `execute_runbook`, `review_case`, `search_security_events`, `get_endpoint_summary`), not generic placeholders. Do not depict any active response tool (isolation, process kill, forensic collection) being invoked by the agent — none exists.
 
 *   **Example Participants:**
     *   `Analyst`, `SOC1 Agent`, `MCP Server`, `Case Management`, `SIEM`, `EDR`, `CTI`.

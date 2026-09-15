@@ -217,8 +217,8 @@ class AgentProfileManager:
         soc3_profile = AgentProfile(
             name="SOC3 Response Agent",
             tier="soc3",
-            description="Executes incident response and containment actions",
-            capabilities=["incident_response", "containment_execution", "forensic_collection"],
+            description="Performs IR-level analysis and produces containment/forensics recommendations for a human analyst to execute. Does NOT execute active response actions itself.",
+            capabilities=["incident_response", "containment_recommendations", "forensic_collection_recommendations"],
             runbooks=[
                 "soc3/response/endpoint_isolation",
                 "soc3/response/process_termination",
@@ -229,8 +229,8 @@ class AgentProfileManager:
                 close_benign_true_positives=True,
                 escalate_to_soc2=False,
                 escalate_to_soc3=False,
-                containment_actions=True,
-                forensic_collection=True
+                containment_actions=False,
+                forensic_collection=False
             ),
             auto_select_runbook=True,
             max_concurrent_cases=3
@@ -292,8 +292,8 @@ class AgentProfileManager:
                 "soc3_response_agent": {
                     "name": "SOC3 Response Agent",
                     "tier": "soc3",
-                    "description": "Executes incident response and containment actions",
-                    "capabilities": ["incident_response", "containment_execution", "forensic_collection"],
+                    "description": "Performs IR-level analysis and produces containment/forensics recommendations for a human analyst to execute. Does NOT execute active response actions itself.",
+                    "capabilities": ["incident_response", "containment_recommendations", "forensic_collection_recommendations"],
                     "runbooks": [
                         "soc3/response/endpoint_isolation",
                         "soc3/response/process_termination",
@@ -304,8 +304,8 @@ class AgentProfileManager:
                         "close_benign_true_positives": True,
                         "escalate_to_soc2": False,
                         "escalate_to_soc3": False,
-                        "containment_actions": True,
-                        "forensic_collection": True
+                        "containment_actions": False,
+                        "forensic_collection": False
                     },
                     "auto_select_runbook": True,
                     "max_concurrent_cases": 3

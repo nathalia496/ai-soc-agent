@@ -51,14 +51,13 @@ Tools for security event analysis:
 - `search_user_activity` - User activity investigation
 - `pivot_on_indicator` - IOC-based investigation
 
-### EDR Tools (6 tools)
-Tools for endpoint investigation and response:
+### EDR Tools (2 tools, read-only)
+Tools for endpoint investigation only. Active response tools (isolation,
+process termination, forensic collection) were intentionally removed — see
+root `README.md`, section "Active response actions removed". SamiGPT never
+takes response actions on its own.
 - `get_endpoint_summary` - Endpoint overview
 - `get_detection_details` - Detection analysis
-- `isolate_endpoint` - Network isolation (critical)
-- `release_endpoint_isolation` - Restore connectivity
-- `kill_process_on_endpoint` - Terminate processes (disruptive)
-- `collect_forensic_artifacts` - Evidence collection
 
 ### Rules Engine Tools (2 tools)
 Tools for automated workflows:
@@ -144,11 +143,7 @@ Use `list_rules` to discover available automated workflows.
 
 ## Security Considerations
 
-⚠️ **Critical Actions**: Some tools perform disruptive operations:
-- `isolate_endpoint` - Disconnects endpoint from network
-- `kill_process_on_endpoint` - Terminates running processes
-
-Always verify parameters before executing critical actions. These operations are logged at WARNING level.
+✅ **Read-only / advisory by design**: SamiGPT has no tools that perform active response actions (endpoint isolation, process termination, forensic collection, network blocking, etc.). It can only read data and produce recommendations for a human analyst to act on. See root `README.md`, section "Active response actions removed", for what was removed and why.
 
 ## Development
 

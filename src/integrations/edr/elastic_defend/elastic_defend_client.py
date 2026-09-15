@@ -27,13 +27,31 @@ from .elastic_defend_http import ElasticDefendHttpClient
 
 logger = get_logger("sami.integrations.elastic_defend.client")
 
+# SamiGPT policy: the agent may only read/enrich endpoint data and produce
+# recommendations. It must never take active response actions (isolating a
+# host, killing a process, triggering forensic collection, etc.) on its own.
+# These methods are intentionally disabled at the integration boundary so
+# that no caller (tool, runbook, or future code path) can reach the EDR
+# vendor API to perform them. See README.md "Active response actions
+# removed" for details.
+RESPONSE_ACTIONS_DISABLED_MESSAGE = (
+    "Active response actions are disabled in SamiGPT. This agent is "
+    "read-only/advisory: it may investigate and recommend actions, but it "
+    "must never execute containment or disruptive actions (isolate a host, "
+    "kill a process, trigger forensic collection, etc.) on its own. Route "
+    "this recommendation to a human analyst to execute manually in the EDR "
+    "console."
+)
+
 
 class ElasticDefendEDRClient:
     """
     EDR client backed by Elastic Defend (Endpoint Security).
-    
-    This implementation uses Elastic Fleet API and Endpoint Security API
-    for endpoint management and response actions.
+
+    This implementation uses the Elastic Fleet API for read-only endpoint
+    and detection queries. Active response actions (isolation, process
+    termination, forensic collection) are intentionally disabled — see
+    ``RESPONSE_ACTIONS_DISABLED_MESSAGE``.
     """
 
     def __init__(self, http_client: ElasticDefendHttpClient) -> None:
@@ -241,111 +259,26 @@ class ElasticDefendEDRClient:
             raise IntegrationError(f"Failed to list detections: {e}") from e
 
     def isolate_endpoint(self, endpoint_id: str) -> QuarantineAction:
-        """Isolate an endpoint (quarantine)."""
-        try:
-            # Use Endpoint Security API to isolate
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "isolate"
-            }
-            
-            response = self._http.post("/api/endpoint/action/isolate", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return QuarantineAction(
-                endpoint_id=endpoint_id,
-                requested_at=datetime.utcnow(),
-                result=ActionResult.PENDING,
-                message=f"Isolation action submitted: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error isolating endpoint: {e}")
-            raise IntegrationError(f"Failed to isolate endpoint: {e}") from e
+        """Disabled: active response actions are not permitted. See module docstring."""
+        raise IntegrationError(RESPONSE_ACTIONS_DISABLED_MESSAGE)
 
     def release_endpoint_isolation(self, endpoint_id: str) -> QuarantineAction:
-        """Release endpoint from isolation."""
-        try:
-            # Use Endpoint Security API to unisolate
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "unisolate"
-            }
-            
-            response = self._http.post("/api/endpoint/action/unisolate", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return QuarantineAction(
-                endpoint_id=endpoint_id,
-                requested_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
-                result=ActionResult.SUCCESS,
-                message=f"Isolation released: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error releasing endpoint isolation: {e}")
-            raise IntegrationError(f"Failed to release endpoint isolation: {e}") from e
+        """Disabled: active response actions are not permitted. See module docstring."""
+        raise IntegrationError(RESPONSE_ACTIONS_DISABLED_MESSAGE)
 
     def kill_process_on_endpoint(
         self,
         endpoint_id: str,
         pid: int,
     ) -> KillProcessAction:
-        """Kill a process on an endpoint."""
-        try:
-            # Use Endpoint Security API to kill process
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "kill-process",
-                "parameters": {
-                    "pid": pid
-                }
-            }
-            
-            response = self._http.post("/api/endpoint/action/kill-process", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return KillProcessAction(
-                endpoint_id=endpoint_id,
-                pid=pid,
-                requested_at=datetime.utcnow(),
-                result=ActionResult.PENDING,
-                message=f"Kill process action submitted: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error killing process: {e}")
-            raise IntegrationError(f"Failed to kill process: {e}") from e
+        """Disabled: active response actions are not permitted. See module docstring."""
+        raise IntegrationError(RESPONSE_ACTIONS_DISABLED_MESSAGE)
 
     def collect_forensic_artifacts(
         self,
         endpoint_id: str,
         artifact_types: List[str],
     ) -> ArtifactCollectionRequest:
-        """Collect forensic artifacts from an endpoint."""
-        try:
-            # Use Endpoint Security API to collect artifacts
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "collect-artifact",
-                "parameters": {
-                    "artifacts": artifact_types
-                }
-            }
-            
-            response = self._http.post("/api/endpoint/action/collect-artifact", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return ArtifactCollectionRequest(
-                endpoint_id=endpoint_id,
-                requested_at=datetime.utcnow(),
-                artifact_types=artifact_types,
-                result=ActionResult.PENDING,
-                message=f"Artifact collection submitted: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error collecting artifacts: {e}")
-            raise IntegrationError(f"Failed to collect forensic artifacts: {e}") from e
+        """Disabled: active response actions are not permitted. See module docstring."""
+        raise IntegrationError(RESPONSE_ACTIONS_DISABLED_MESSAGE)
 

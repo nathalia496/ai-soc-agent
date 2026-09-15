@@ -136,14 +136,14 @@ These practices ensure that **every unit of work has a corresponding task**, tha
   - Does *not* begin workflows from `${ALERT_ID}` in the raw alert queue - SOC2 always starts from `${CASE_ID}`.
   - If an alert needs investigation but no case exists, SOC2 should request SOC1 to create the case first.
 - **No direct containment actions**:
-  - Does *not* call `isolate_endpoint` or `kill_process_on_endpoint`.
+  - Does *not* isolate endpoints or kill processes (no such tools exist for any SOC tier — see project `README.md`, section "Active response actions removed").
   - Does *not* directly block network IOCs.
 - **No final incident response coordination**:
-  - Does *not* own full incident response execution; that is SOC3's responsibility.
+  - Does *not* own incident response recommendation-building for confirmed active threats; that is SOC3's responsibility.
 - **No initial triage of brand-new alerts**:
   - New alerts should start with SOC1; SOC2 focuses on escalated or complex cases.
 
-SOC2’s job is to **fully understand the threat** and provide SOC3 with all the information needed to execute safe and effective containment.
+SOC2’s job is to **fully understand the threat** and provide SOC3 with all the information needed to produce a safe and effective containment recommendation (for a human analyst to execute).
 
 ## Key Runbooks for SOC2
 
@@ -161,7 +161,7 @@ SOC2’s job is to **fully understand the threat** and provide SOC3 with all the
   - Who/what was affected (hosts, users, data)?
   - What should SOC3 do next (containment recommendations)?
 - **Treat SOC2 recommendations as the input to SOC3**:
-  - SOC3 should use SOC2’s outputs to choose and execute the appropriate response runbook(s).
+  - SOC3 should use SOC2’s outputs to choose the appropriate response runbook(s) and produce a recommendation — SOC3 does not execute the response itself either.
 
 If containment is required, SOC2 should **explicitly indicate this** and ensure the case is escalated to SOC3 with all supporting evidence documented.
 
