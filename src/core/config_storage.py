@@ -61,6 +61,7 @@ def _config_to_dict(config: SamiConfig) -> Dict[str, Any]:
     if config.elastic:
         result["elastic"] = {
             "base_url": config.elastic.base_url,
+            "siem_type": config.elastic.siem_type,
             "api_key": config.elastic.api_key,
             "username": config.elastic.username,
             "password": config.elastic.password,
@@ -159,6 +160,7 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
         if el_data.get("base_url"):
             elastic_cfg = ElasticConfig(
                 base_url=el_data["base_url"],
+                siem_type=el_data.get("siem_type", "elasticsearch"),
                 api_key=el_data.get("api_key"),
                 username=el_data.get("username"),
                 password=el_data.get("password"),
@@ -335,6 +337,7 @@ def _env_dict_to_config(env_dict: Dict[str, Any]) -> SamiConfig:
         verify_ssl = env_dict.get("SAMIGPT_ELASTIC_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
         elastic_cfg = ElasticConfig(
             base_url=elastic_url,
+            siem_type=env_dict.get("SAMIGPT_ELASTIC_SIEM_TYPE", "elasticsearch"),
             api_key=env_dict.get("SAMIGPT_ELASTIC_API_KEY"),
             username=env_dict.get("SAMIGPT_ELASTIC_USERNAME"),
             password=env_dict.get("SAMIGPT_ELASTIC_PASSWORD"),
@@ -510,8 +513,9 @@ def save_config_to_env_file(config: SamiConfig, env_path: str = ENV_FILE) -> Non
 
         # Elastic
         if config.elastic:
-            lines.append("# Elastic (SIEM)")
+            lines.append("# SIEM (Elasticsearch or OpenSearch)")
             lines.append(f"SAMIGPT_ELASTIC_URL={config.elastic.base_url}")
+            lines.append(f"SAMIGPT_ELASTIC_SIEM_TYPE={config.elastic.siem_type}")
             if config.elastic.api_key:
                 lines.append(f'SAMIGPT_ELASTIC_API_KEY="{config.elastic.api_key}"')
             if config.elastic.username:
@@ -656,6 +660,7 @@ def update_config_dict(
         elif el_updates.get("base_url"):
             config.elastic = ElasticConfig(
                 base_url=el_updates["base_url"],
+                siem_type=el_updates.get("siem_type", "elasticsearch"),
                 api_key=el_updates.get("api_key"),
                 username=el_updates.get("username"),
                 password=el_updates.get("password"),

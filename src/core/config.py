@@ -41,10 +41,19 @@ class IrisConfig:
 @dataclass
 class ElasticConfig:
     """
-    Configuration for Elastic (SIEM) integration.
+    Configuration for the SIEM/log-search backend.
+
+    The client (``ElasticSIEMClient``) speaks plain Elasticsearch-style REST
+    (``_search``, ``_update``, ``_doc``) and query DSL, which OpenSearch
+    implements identically (OpenSearch is a fork of Elasticsearch 7.10).
+    ``siem_type`` is purely informational/for logging - it does not change
+    request behavior. For a local OpenSearch instance with the security
+    plugin disabled (``DISABLE_SECURITY_PLUGIN=true``), leave ``api_key``,
+    ``username`` and ``password`` unset and use an ``http://`` ``base_url``.
     """
 
     base_url: str
+    siem_type: str = "elasticsearch"  # "elasticsearch" or "opensearch"
     api_key: Optional[str] = None
     username: Optional[str] = None
     password: Optional[str] = None

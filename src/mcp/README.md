@@ -41,8 +41,11 @@ Tools for managing security incidents and cases:
 - `assign_case` - Assign to analysts
 - `get_case_timeline` - View case history
 
-### SIEM Tools (7 tools)
-Tools for security event analysis:
+### SIEM Tools (27 tools)
+Backed by Elasticsearch or OpenSearch (same wire protocol - see `config.json`'s `elastic.siem_type`).
+A few of the most-used ones:
+- `get_recent_alerts` / `get_security_alerts` / `get_security_alert_by_id` - Pull SIEM alerts
+- `get_logs_for_alert` - Fetch nearby logs/evidence for an alert (by host/user/IP and time window)
 - `search_security_events` - Query security logs
 - `get_file_report` - Analyze files by hash
 - `get_file_behavior_summary` - File behavior analysis
@@ -50,6 +53,8 @@ Tools for security event analysis:
 - `get_ip_address_report` - IP reputation and context
 - `search_user_activity` - User activity investigation
 - `pivot_on_indicator` - IOC-based investigation
+
+See [TOOLS.md](TOOLS.md) for the full list.
 
 ### EDR Tools (3 tools, investigation-only)
 Tools for endpoint investigation and evidence gathering. This agent is a human-in-the-loop
