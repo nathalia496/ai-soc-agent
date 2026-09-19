@@ -3,6 +3,14 @@ LLM-callable tools for EDR operations.
 
 These functions wrap the generic EDRClient interface and provide
 LLM-friendly error handling and return values.
+
+Investigation-only boundary: this module intentionally exposes read-only /
+evidence-gathering EDR operations only (endpoint and detection lookups,
+forensic artifact collection). Active response actions such as endpoint
+isolation and process termination are not exposed here and must be
+performed directly by a human analyst through the EDR platform, never by
+this agent. See standards/case_standard.md and run_books/soc3/guidelines.md
+for the human-in-the-loop containment workflow.
 """
 
 from __future__ import annotations
@@ -113,152 +121,6 @@ def get_detection_details(
         }
     except Exception as e:
         raise IntegrationError(f"Failed to get detection details for {detection_id}: {str(e)}") from e
-
-
-def isolate_endpoint(
-    endpoint_id: str,
-    client: EDRClient = None,  # type: ignore
-) -> Dict[str, Any]:
-    """
-    Isolate an endpoint from the network.
-
-    Tool schema:
-    - name: isolate_endpoint
-    - description: Isolate an endpoint from the network to prevent further
-      compromise or lateral movement. This is a critical response action.
-    - parameters:
-      - endpoint_id (str, required): The endpoint ID to isolate.
-
-    Args:
-        endpoint_id: The endpoint ID.
-        client: The EDR client.
-
-    Returns:
-        Dictionary containing isolation action details.
-
-    Raises:
-        IntegrationError: If isolation fails.
-    """
-    if client is None:
-        raise IntegrationError("EDR client not provided")
-
-    try:
-        action = client.isolate_endpoint(endpoint_id)
-
-        return {
-            "success": True,
-            "action": {
-                "endpoint_id": action.endpoint_id,
-                "result": action.result.value,
-                "requested_at": action.requested_at.isoformat(),
-                "completed_at": action.completed_at.isoformat()
-                if action.completed_at
-                else None,
-                "message": action.message,
-            },
-        }
-    except Exception as e:
-        raise IntegrationError(f"Failed to isolate endpoint {endpoint_id}: {str(e)}") from e
-
-
-def release_endpoint_isolation(
-    endpoint_id: str,
-    client: EDRClient = None,  # type: ignore
-) -> Dict[str, Any]:
-    """
-    Release an endpoint from isolation.
-
-    Tool schema:
-    - name: release_endpoint_isolation
-    - description: Release an endpoint from network isolation, restoring
-      normal network connectivity.
-    - parameters:
-      - endpoint_id (str, required): The endpoint ID to release.
-
-    Args:
-        endpoint_id: The endpoint ID.
-        client: The EDR client.
-
-    Returns:
-        Dictionary containing release action details.
-
-    Raises:
-        IntegrationError: If release fails.
-    """
-    if client is None:
-        raise IntegrationError("EDR client not provided")
-
-    try:
-        action = client.release_endpoint_isolation(endpoint_id)
-
-        return {
-            "success": True,
-            "action": {
-                "endpoint_id": action.endpoint_id,
-                "result": action.result.value,
-                "requested_at": action.requested_at.isoformat(),
-                "completed_at": action.completed_at.isoformat()
-                if action.completed_at
-                else None,
-                "message": action.message,
-            },
-        }
-    except Exception as e:
-        raise IntegrationError(
-            f"Failed to release endpoint isolation for {endpoint_id}: {str(e)}"
-        ) from e
-
-
-def kill_process_on_endpoint(
-    endpoint_id: str,
-    pid: int,
-    client: EDRClient = None,  # type: ignore
-) -> Dict[str, Any]:
-    """
-    Kill a process on an endpoint.
-
-    Tool schema:
-    - name: kill_process_on_endpoint
-    - description: Terminate a specific process running on an endpoint by
-      its process ID. Use with caution as this is a disruptive action.
-    - parameters:
-      - endpoint_id (str, required): The endpoint ID.
-      - pid (int, required): The process ID to kill.
-
-    Args:
-        endpoint_id: The endpoint ID.
-        pid: The process ID.
-        client: The EDR client.
-
-    Returns:
-        Dictionary containing kill action details.
-
-    Raises:
-        IntegrationError: If killing process fails.
-    """
-    if client is None:
-        raise IntegrationError("EDR client not provided")
-
-    try:
-        action = client.kill_process_on_endpoint(endpoint_id, pid)
-
-        return {
-            "success": True,
-            "action": {
-                "endpoint_id": action.endpoint_id,
-                "pid": action.pid,
-                "result": action.result.value,
-                "requested_at": action.requested_at.isoformat(),
-                "completed_at": action.completed_at.isoformat()
-                if action.completed_at
-                else None,
-                "message": action.message,
-            },
-        }
-    except Exception as e:
-        raise IntegrationError(
-            f"Failed to kill process {pid} on endpoint {endpoint_id}: {str(e)}"
-        ) from e
 
 
 def collect_forensic_artifacts(

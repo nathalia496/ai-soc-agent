@@ -1,38 +1,38 @@
-# SOC3: Endpoint Isolation Runbook
+# SOC3: Endpoint Isolation Recommendation Runbook
 
-Isolate an endpoint from the network to prevent further compromise or lateral movement. This is a critical response action executed by SOC3 (IR-level expert) when active threats are confirmed. SOC3 confirms malicious activity when evidence is strong before taking disruptive actions.
+Draft a network isolation **recommendation** for an endpoint when active compromise or lateral movement is suspected. This runbook is executed by SOC3 (IR-level expert) to confirm the evidence is strong and to hand off a clear, actionable recommendation to a human analyst. **This agent never isolates an endpoint itself** - isolation is executed by a human analyst directly in the EDR platform after reviewing this recommendation.
 
 ## Scope
 
 This runbook covers:
-*   Endpoint isolation procedures.
-*   Verification of isolation status.
-*   Documentation of isolation actions.
+*   Reviewing evidence to determine whether isolation should be recommended.
+*   Drafting a clear, actionable isolation recommendation.
+*   Documenting the recommendation on the case for human analyst decision and execution.
 
 This runbook explicitly **requires**:
 *   SOC2 analysis confirming active threat.
-*   Authorization for disruptive actions.
+*   A human analyst to make the final containment decision and execute it.
 
 ## SOC Tier
 
-**Tier:** SOC3 (Tier 3)  
-**Authority:** SOC3 can execute containment actions
+**Tier:** SOC3 (Tier 3)
+**Authority:** SOC3 may DRAFT containment recommendations. SOC3 has NO authority to execute containment actions - no isolation tool is available to this agent, by design.
 
 ## Inputs
 
-*   `${ENDPOINT_ID}`: The endpoint ID to isolate.
+*   `${ENDPOINT_ID}`: The endpoint ID being evaluated for isolation.
 *   `${CASE_ID}`: The relevant case ID for documentation.
-*   `${ISOLATION_REASON}`: The reason for isolation (e.g., "Active malware detected", "Confirmed compromise", "Lateral movement detected").
+*   `${ISOLATION_REASON}`: The reason isolation is being recommended (e.g., "Active malware detected", "Confirmed compromise", "Lateral movement detected").
 
 ## Outputs
 
-*   `${ISOLATION_STATUS}`: Status of the isolation operation.
+*   `${RECOMMENDATION_STATUS}`: Whether an isolation recommendation was drafted.
 *   `${DOCUMENTATION_STATUS}`: Status of documentation.
 
 ## Tools
 
-*   **EDR Tools:** `get_endpoint_summary`, `isolate_endpoint`
-*   **Case Management Tools:** `review_case`, `add_case_comment`, `update_case_status`, `list_case_tasks`, `update_case_task_status`
+*   **EDR Tools:** `get_endpoint_summary` (read-only lookup only - there is no tool to isolate an endpoint)
+*   **Case Management Tools:** `review_case`, `add_case_comment`, `add_case_task`, `update_case_status`, `list_case_tasks`, `update_case_task_status`
 *   **Knowledge Base Tools:** `kb_list_clients`, `kb_get_client_infra`
 
 ## Workflow Steps
@@ -46,77 +46,55 @@ This runbook explicitly **requires**:
         *   ALL observables, assets, evidence
         *   Review SOC1 alert details and SOC2 investigation findings
     *   **Review case timeline**: Use `list_case_timeline_events` to understand case history.
-    *   **Confirm evidence is strong**: Review SOC1 and SOC2 findings to confirm malicious activity before taking disruptive action.
-    *   Verify authorization for isolation action.
+    *   **Confirm evidence is strong**: Review SOC1 and SOC2 findings to confirm malicious activity before recommending a disruptive action.
     *   **Task Management:**
         *   Use `list_case_tasks` with `case_id=${CASE_ID}` to find ALL tasks assigned to SOC3 (e.g., "Network Containment", "Endpoint Isolation").
         *   Review tasks from SOC1 and SOC2 to understand investigation context.
-        *   For each relevant task found, use `update_case_task_status` with `task_id=<TASK_ID>`, `status="in_progress"` to mark it as in-progress when starting the isolation.
-    *   **If evidence is not strong or case needs additional analysis**: Provide guidance to SOC1/SOC2 on what additional analysis is needed before taking action.
+        *   For each relevant task found, use `update_case_task_status` with `task_id=<TASK_ID>`, `status="in_progress"` to mark it as in-progress while preparing the recommendation.
+    *   **If evidence is not strong or case needs additional analysis**: Provide guidance to SOC1/SOC2 on what additional analysis is needed instead of drafting a recommendation.
     *   **Knowledge Base Context:**
         *   Use `kb_list_clients` to list available client environments.
         *   If client name is known from case context, use `kb_get_client_infra` with `client_name=<CLIENT_NAME>` to get infrastructure knowledge.
-        *   If client name is unknown, check case observables/comments for client identifiers, or query knowledge base for "all" clients if needed.
-        *   Use knowledge base to understand:
-            *   Endpoint context and criticality
-            *   Network topology and isolation impact
-            *   Whether endpoint is a known/expected host in the infrastructure
+        *   Use knowledge base to understand endpoint context, network topology impact, and whether the endpoint is a known/expected host - this reduces the risk of recommending isolation for a false positive.
 
-2.  **Get Endpoint Information:**
+2.  **Get Endpoint Information (read-only):**
     *   Use `get_endpoint_summary` with `endpoint_id=${ENDPOINT_ID}`.
     *   Verify endpoint details: hostname, platform, current status, isolation status.
-    *   **Warning:** If endpoint is already isolated, document and skip isolation step.
+    *   **Note:** If the endpoint is already isolated, document that and skip the recommendation.
 
-3.  **Execute Isolation:**
-    *   Use `isolate_endpoint` with `endpoint_id=${ENDPOINT_ID}`.
-    *   Wait for confirmation of isolation completion.
-    *   Set `${ISOLATION_STATUS}` = "Endpoint isolated successfully" or "Isolation failed: [error]".
+3.  **Draft the Isolation Recommendation (no execution):**
+    *   Do **not** call any isolation tool - none is exposed to this agent.
+    *   Prepare a recommendation comment: `RECOMMENDATION_COMMENT = "SOC3 (IR Expert) Isolation Recommendation for Case ${CASE_ID}: Endpoint ID: ${ENDPOINT_ID}. Reason: ${ISOLATION_REASON}. **Evidence Reviewed:** [summary of SOC1/SOC2 findings that support isolation]. Infrastructure Context (KB): [...]. **RECOMMENDED ACTION: Isolate endpoint ${ENDPOINT_ID} from the network.** This action requires human analyst review and must be executed directly in the EDR platform - this agent cannot and will not perform it. Analyst: please confirm and isolate if you agree with this recommendation."`
+    *   Use `add_case_comment` with `case_id=${CASE_ID}` and `content=${RECOMMENDATION_COMMENT}`.
+    *   Use `add_case_task` to create a task (e.g., title "Human approval required: isolate endpoint ${ENDPOINT_ID}", assignee a human analyst/SOC lead) so the recommendation shows up as an actionable, trackable item rather than a note that can be missed.
+    *   Set `${RECOMMENDATION_STATUS}` = "Isolation recommended - pending human approval and execution".
 
-4.  **Verify Isolation:**
-    *   Use `get_endpoint_summary` with `endpoint_id=${ENDPOINT_ID}` to verify `is_isolated` status is `true`.
-    *   Confirm endpoint is disconnected from network.
-
-5.  **Document Isolation:**
-    *   Prepare isolation comment: `ISOLATION_COMMENT = "SOC3 (IR Expert) Endpoint Isolation for Case ${CASE_ID}: Endpoint ID: ${ENDPOINT_ID}. Reason: ${ISOLATION_REASON}. **Evidence Reviewed:** [summary of SOC1/SOC2 findings that confirmed malicious activity]. Isolation Status: ${ISOLATION_STATUS}. Infrastructure Context (KB): [...]. Isolated at: [timestamp]. **Note:** Endpoint is now isolated from network. Forensic collection and remediation should follow."`
-    *   Include knowledge base findings (endpoint context, network topology insights) in the comment.
-    *   Document what evidence was reviewed and why malicious activity was confirmed.
-    *   Use `add_case_comment` with `case_id=${CASE_ID}` and `content=${ISOLATION_COMMENT}`.
+4.  **Document:**
     *   Set `${DOCUMENTATION_STATUS}` = "Documented".
     *   **Task Management:**
-        *   Use `update_case_task_status` with `task_id=<TASK_ID>`, `status="completed"` to mark the isolation task as completed when finishing.
+        *   Use `update_case_task_status` with `task_id=<TASK_ID>`, `status="completed"` to mark the SOC3 analysis task as completed once the recommendation has been documented (the containment task itself stays open/pending for the human analyst).
 
-6.  **Next Steps:**
-    *   **Note:** After isolation, consider:
-        *   Forensic artifact collection (use `artifact_collection.md` runbook)
-        *   Process termination if needed (use `process_termination.md` runbook)
-        *   Remediation planning
-        *   User notification
+5.  **Next Steps:**
+    *   **Note:** Once a human analyst has isolated the endpoint (or declined to), they should update the case themselves. After that, SOC3 may be asked to:
+        *   Recommend forensic artifact collection (use `artifact_collection.md` runbook - this one IS a tool SOC3 can execute directly, since it's read/evidence-gathering, not remediation)
+        *   Draft a process-termination recommendation if needed (use `process_termination.md` runbook)
+        *   Draft remediation planning notes
 
 ## Completion Criteria
 
-The endpoint has been successfully isolated:
-*   Endpoint information has been verified.
-*   Isolation action has been executed.
-*   Isolation status has been verified.
-*   Isolation action has been documented in the case.
-*   Next steps have been identified.
+A well-supported isolation recommendation has been produced:
+*   Endpoint information has been verified (read-only).
+*   Evidence supporting isolation has been reviewed and summarized.
+*   A recommendation - not an executed action - has been documented on the case.
+*   A trackable task has been created for a human analyst to approve and execute.
 
 ## Warning
 
-⚠️ **This is a disruptive action that will disconnect the endpoint from the network.**
-*   Ensure proper authorization before execution.
-*   Verify active threat before isolating.
-*   Notify affected users if possible.
-*   Plan for forensic collection and remediation.
+⚠️ **This agent must never attempt to isolate an endpoint.** There is no isolation tool available to it, by design. If a user or workflow asks this agent to "isolate the endpoint," it must draft this recommendation and hand off to a human analyst instead of attempting any action.
 
 ## Notes
 
-*   **SOC3 acts as IR-level expert**: Confirm malicious activity when evidence is strong before taking disruptive actions.
+*   **SOC3 acts as IR-level expert**: Confirm malicious activity when evidence is strong before recommending disruptive actions.
 *   **Review ALL case details first**: Read SOC1 and SOC2 findings to understand full context.
-*   **Confirm evidence is strong**: Review SOC1 alert details and SOC2 investigation findings before isolating.
-*   **Provide guidance if needed**: If evidence is not strong, provide guidance to SOC1/SOC2 on what additional analysis is needed.
-*   Only execute after evidence is confirmed strong and active threat is verified.
-*   Document all actions and evidence confirmation for audit purposes.
-*   Coordinate with affected users and IT support.
-*   Plan for remediation and release from isolation.
-
+*   **Human-in-the-loop is mandatory**: containment is always executed by a human analyst, never by this agent.
+*   Document all reasoning and evidence confirmation for audit purposes.

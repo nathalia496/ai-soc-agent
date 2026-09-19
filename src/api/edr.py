@@ -93,33 +93,6 @@ class Detection(BaseDTO):
 
 
 @dataclass
-class QuarantineAction(BaseDTO):
-    """
-    Represents an isolation/quarantine action on an endpoint.
-    """
-
-    endpoint_id: str
-    requested_at: datetime
-    completed_at: Optional[datetime] = None
-    result: ActionResult = ActionResult.PENDING
-    message: Optional[str] = None
-
-
-@dataclass
-class KillProcessAction(BaseDTO):
-    """
-    Represents a process termination action on an endpoint.
-    """
-
-    endpoint_id: str
-    pid: int
-    requested_at: datetime
-    completed_at: Optional[datetime] = None
-    result: ActionResult = ActionResult.PENDING
-    message: Optional[str] = None
-
-
-@dataclass
 class ArtifactCollectionRequest(BaseDTO):
     """
     Represents a forensic artifact collection request.
@@ -137,12 +110,15 @@ class EDRClient(Protocol):
     """
     Vendor-neutral interface for EDR operations.
 
-    This interface is designed to support the skills described in the README:
+    Investigation-only by design: this interface intentionally supports
+    read/evidence-gathering skills only. Active response actions (endpoint
+    isolation, releasing isolation, process termination) are out of scope
+    for this agent - remediation is always performed by a human analyst
+    directly in the EDR platform.
+
+    Skills supported:
     - get_endpoint_summary
     - get_detection_details
-    - isolate_endpoint
-    - release_endpoint_isolation
-    - kill_process_on_endpoint
     - collect_forensic_artifacts
     """
 
@@ -161,20 +137,6 @@ class EDRClient(Protocol):
         endpoint_id: Optional[str] = None,
         limit: int = 50,
     ) -> List[Detection]:
-        ...
-
-    # Response actions
-    def isolate_endpoint(self, endpoint_id: str) -> QuarantineAction:
-        ...
-
-    def release_endpoint_isolation(self, endpoint_id: str) -> QuarantineAction:
-        ...
-
-    def kill_process_on_endpoint(
-        self,
-        endpoint_id: str,
-        pid: int,
-    ) -> KillProcessAction:
         ...
 
     def collect_forensic_artifacts(

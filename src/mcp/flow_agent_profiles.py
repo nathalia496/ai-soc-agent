@@ -113,10 +113,10 @@ def load_agent_profiles_config() -> Dict[str, Any]:
             "soc3_response_agent": {
                 "name": "SOC3 Response Agent",
                 "tier": "soc3",
-                "description": "Executes incident response and containment actions",
+                "description": "Performs advanced investigation and drafts containment/response recommendations for human analyst approval. Never executes containment actions itself.",
                 "capabilities": [
                     "incident_response",
-                    "containment_execution",
+                    "containment_recommendations",
                     "forensic_collection",
                 ],
                 "runbooks": [
@@ -129,7 +129,7 @@ def load_agent_profiles_config() -> Dict[str, Any]:
                     "close_benign_true_positives": True,
                     "escalate_to_soc2": False,
                     "escalate_to_soc3": False,
-                    "containment_actions": True,
+                    "containment_actions": False,
                     "forensic_collection": True,
                 },
                 "auto_select_runbook": True,

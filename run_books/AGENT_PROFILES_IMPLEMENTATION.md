@@ -98,10 +98,10 @@ The Agent Profiles approach allows you to configure multiple autonomous agents, 
     "soc3_response_agent": {
       "name": "SOC3 Response Agent",
       "tier": "soc3",
-      "description": "Executes incident response and containment actions",
+      "description": "Performs advanced investigation and drafts containment/response recommendations for human analyst approval. Never executes containment actions itself.",
       "capabilities": [
         "incident_response",
-        "containment_execution",
+        "containment_recommendations",
         "forensic_collection"
       ],
       "runbooks": [
@@ -113,7 +113,7 @@ The Agent Profiles approach allows you to configure multiple autonomous agents, 
         "close_false_positives": true,
         "escalate_to_soc2": false,
         "escalate_to_soc3": false,
-        "containment_actions": true,
+        "containment_actions": false,
         "forensic_collection": true
       },
       "auto_select_runbook": true,

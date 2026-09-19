@@ -14,7 +14,15 @@ from ..core.errors import IntegrationError
 
 @dataclass
 class DecisionAuthority:
-    """Decision authority for an agent."""
+    """
+    Decision authority for an agent.
+
+    ``containment_actions`` reflects whether this profile may DRAFT
+    containment/response recommendations (e.g. "isolate this endpoint") for
+    a human analyst to review and execute. It never grants the agent the
+    ability to execute those actions itself - no such tool is registered
+    anywhere in this codebase, by design (see src/orchestrator/tools_edr.py).
+    """
     close_false_positives: bool = False
     close_benign_true_positives: bool = False
     escalate_to_soc2: bool = False
@@ -217,8 +225,12 @@ class AgentProfileManager:
         soc3_profile = AgentProfile(
             name="SOC3 Response Agent",
             tier="soc3",
-            description="Executes incident response and containment actions",
-            capabilities=["incident_response", "containment_execution", "forensic_collection"],
+            description=(
+                "Performs advanced investigation and drafts containment/response "
+                "recommendations for human analyst approval. Never executes "
+                "containment actions itself."
+            ),
+            capabilities=["incident_response", "containment_recommendations", "forensic_collection"],
             runbooks=[
                 "soc3/response/endpoint_isolation",
                 "soc3/response/process_termination",
@@ -229,7 +241,7 @@ class AgentProfileManager:
                 close_benign_true_positives=True,
                 escalate_to_soc2=False,
                 escalate_to_soc3=False,
-                containment_actions=True,
+                containment_actions=False,
                 forensic_collection=True
             ),
             auto_select_runbook=True,
@@ -292,8 +304,8 @@ class AgentProfileManager:
                 "soc3_response_agent": {
                     "name": "SOC3 Response Agent",
                     "tier": "soc3",
-                    "description": "Executes incident response and containment actions",
-                    "capabilities": ["incident_response", "containment_execution", "forensic_collection"],
+                    "description": "Performs advanced investigation and drafts containment/response recommendations for human analyst approval. Never executes containment actions itself.",
+                    "capabilities": ["incident_response", "containment_recommendations", "forensic_collection"],
                     "runbooks": [
                         "soc3/response/endpoint_isolation",
                         "soc3/response/process_termination",
@@ -304,7 +316,7 @@ class AgentProfileManager:
                         "close_benign_true_positives": True,
                         "escalate_to_soc2": False,
                         "escalate_to_soc3": False,
-                        "containment_actions": True,
+                        "containment_actions": False,
                         "forensic_collection": True
                     },
                     "auto_select_runbook": True,

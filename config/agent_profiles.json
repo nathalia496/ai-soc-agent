@@ -145,10 +145,10 @@
     "soc3_response_agent": {
       "name": "SOC3 Response Agent",
       "tier": "soc3",
-      "description": "Executes incident response and containment actions",
+      "description": "Performs advanced investigation and drafts containment/response recommendations for human analyst approval. Never executes containment actions itself.",
       "capabilities": [
         "incident_response",
-        "containment_execution",
+        "containment_recommendations",
         "forensic_collection",
         "client_kb_access"
       ],
@@ -179,9 +179,6 @@
         "list_case_evidence",
         "get_endpoint_summary",
         "get_detection_details",
-        "isolate_endpoint",
-        "release_endpoint_isolation",
-        "kill_process_on_endpoint",
         "collect_forensic_artifacts",
         "get_security_alert_by_id",
         "get_siem_event_by_id",
@@ -210,7 +207,7 @@
         "close_benign_true_positives": true,
         "escalate_to_soc2": false,
         "escalate_to_soc3": false,
-        "containment_actions": true,
+        "containment_actions": false,
         "forensic_collection": true
       },
       "auto_select_runbook": true,
