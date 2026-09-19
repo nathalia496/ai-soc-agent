@@ -1919,7 +1919,11 @@ The CTI platform is configured in `config.json`:
 
 ## EDR Tools
 
-EDR (Endpoint Detection and Response) tools enable interaction with endpoint security platforms to investigate and respond to threats on endpoints.
+EDR (Endpoint Detection and Response) tools enable interaction with endpoint security platforms
+to **investigate** threats on endpoints. This agent is a human-in-the-loop investigation copilot:
+these tools are strictly read-only / evidence-gathering. There are no tools to isolate an
+endpoint, release isolation, or kill a process - those active response actions are always
+performed by a human analyst directly in the EDR platform.
 
 ### `get_endpoint_summary`
 
@@ -1993,114 +1997,14 @@ Retrieve detailed information about a specific detection including type, severit
 
 ---
 
-### `isolate_endpoint`
-
-Isolate an endpoint from the network to prevent further compromise or lateral movement. **This is a critical response action.**
-
-**Parameters:**
-- `endpoint_id` (string, required): The endpoint ID to isolate
-
-**Returns:**
-- `success` (boolean): Whether the operation succeeded
-- `action` (object): Action details including:
-  - `endpoint_id` (string): Endpoint identifier
-  - `result` (string): Action result status
-  - `requested_at` (string): ISO timestamp of request
-  - `completed_at` (string): ISO timestamp of completion (if completed)
-  - `message` (string): Status message
-
-**Usage Example:**
-```json
-{
-  "name": "isolate_endpoint",
-  "arguments": {
-    "endpoint_id": "endpoint-12345"
-  }
-}
-```
-
-**Use Cases:**
-- Contain active threats
-- Prevent lateral movement
-- Isolate compromised systems
-- Emergency response
-
-**⚠️ Warning:** This is a disruptive action that will disconnect the endpoint from the network. Use with caution.
-
----
-
-### `release_endpoint_isolation`
-
-Release an endpoint from network isolation, restoring normal network connectivity.
-
-**Parameters:**
-- `endpoint_id` (string, required): The endpoint ID to release
-
-**Returns:**
-- `success` (boolean): Whether the operation succeeded
-- `action` (object): Action details including:
-  - `endpoint_id` (string): Endpoint identifier
-  - `result` (string): Action result status
-  - `requested_at` (string): ISO timestamp of request
-  - `completed_at` (string): ISO timestamp of completion (if completed)
-  - `message` (string): Status message
-
-**Usage Example:**
-```json
-{
-  "name": "release_endpoint_isolation",
-  "arguments": {
-    "endpoint_id": "endpoint-12345"
-  }
-}
-```
-
-**Use Cases:**
-- Restore endpoint connectivity
-- Release after remediation
-- Return endpoint to normal operations
-- Post-incident recovery
-
----
-
-### `kill_process_on_endpoint`
-
-Terminate a specific process running on an endpoint by its process ID. **Use with caution as this is a disruptive action.**
-
-**Parameters:**
-- `endpoint_id` (string, required): The endpoint ID
-- `pid` (integer, required): The process ID to kill
-
-**Returns:**
-- `success` (boolean): Whether the operation succeeded
-- `action` (object): Action details including:
-  - `endpoint_id` (string): Endpoint identifier
-  - `pid` (integer): Process ID
-  - `result` (string): Action result status
-  - `requested_at` (string): ISO timestamp of request
-  - `completed_at` (string): ISO timestamp of completion (if completed)
-  - `message` (string): Status message
-
-**Usage Example:**
-```json
-{
-  "name": "kill_process_on_endpoint",
-  "arguments": {
-    "endpoint_id": "endpoint-12345",
-    "pid": 1234
-  }
-}
-```
-
-**Use Cases:**
-- Stop malicious processes
-- Terminate suspicious activity
-- Kill malware processes
-- Emergency response
-
-**⚠️ Warning:** This will terminate the specified process immediately. Use with caution.
-
----
+> **Note - no active response tools:** This agent is a human-in-the-loop investigation
+> copilot. It intentionally does **not** expose `isolate_endpoint`, `release_endpoint_isolation`,
+> `kill_process_on_endpoint`, or any other remediation/active-response tool. Endpoint isolation
+> and process termination must always be performed by a human analyst directly in the EDR
+> platform. The agent's role is to investigate, enrich, and draft a containment recommendation
+> (with a human-approval task on the case) - never to execute it. See
+> `run_books/soc3/response/endpoint_isolation.md` and `process_termination.md` for the
+> recommendation-only workflow.
 
 ### `collect_forensic_artifacts`
 
@@ -2502,7 +2406,9 @@ Execute an investigation rule/workflow that chains together multiple skills.
 - Validate all input parameters
 - Sanitize user-provided data
 - Use least privilege principles
-- Log all critical actions (isolation, process termination, etc.)
+- This agent never executes active response actions (isolation, process termination, etc.) -
+  those tools do not exist here. Draft a recommendation and a human-approval task instead, and
+  log/document the recommendation clearly for audit.
 
 ### Workflow Examples
 
@@ -2513,12 +2419,14 @@ Execute an investigation rule/workflow that chains together multiple skills.
 4. Create or update a case with `attach_observable_to_case`
 5. Document findings with `add_case_comment`
 
-**Example 2: Respond to Endpoint Detection**
+**Example 2: Investigate an Endpoint Detection and Recommend Response**
 1. Use `get_detection_details` to understand the threat
 2. Use `get_endpoint_summary` to check endpoint status
-3. Use `isolate_endpoint` if threat is active
-4. Use `collect_forensic_artifacts` to gather evidence
-5. Use `get_file_report` to analyze associated files
+3. Use `collect_forensic_artifacts` to gather evidence
+4. Use `get_file_report` to analyze associated files
+5. If containment appears warranted, document a recommendation with `add_case_comment` and
+   create a human-approval task with `add_case_task` - do not attempt to isolate the endpoint
+   or kill any process; a human analyst executes that directly in the EDR platform.
 6. Create case and document with case management tools
 
 **Example 3: Automated Investigation Workflow**

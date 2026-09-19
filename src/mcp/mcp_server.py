@@ -1750,15 +1750,20 @@ class SamiGPTMCPServer:
     def _register_edr_tools(self) -> None:
         """
         Register EDR tools.
-        
+
+        This agent is a human-in-the-loop investigation copilot: it may only
+        read endpoint/detection data and request forensic artifact
+        collection. It must never be able to invoke active response /
+        remediation actions (endpoint isolation, releasing isolation, or
+        killing processes) - those require a human analyst to act directly
+        in the EDR platform. Do not add tool registrations or dispatch
+        entries for such actions here.
+
         Available tools:
         - get_endpoint_summary: Get endpoint overview (hostname, platform, isolation status)
         - get_detection_details: Get detailed detection information
-        - isolate_endpoint: Isolate endpoint from network (CRITICAL ACTION - use with caution)
-        - release_endpoint_isolation: Release endpoint from isolation
-        - kill_process_on_endpoint: Terminate process on endpoint (DISRUPTIVE - use with caution)
-        - collect_forensic_artifacts: Initiate forensic artifact collection
-        
+        - collect_forensic_artifacts: Initiate forensic artifact collection (evidence gathering only)
+
         See TOOLS.md for detailed documentation and usage examples.
         """
         if not self.edr_client:
@@ -1767,7 +1772,7 @@ class SamiGPTMCPServer:
                 "Configure EDR platform in config.json to enable EDR tools."
             )
             return
-        self._mcp_logger.info(f"Registering {6} EDR tools")
+        self._mcp_logger.info(f"Registering {3} EDR tools (investigation-only; no active response)")
 
         self.tools["get_endpoint_summary"] = {
             "name": "get_endpoint_summary",
@@ -1796,55 +1801,6 @@ class SamiGPTMCPServer:
                     }
                 },
                 "required": ["detection_id"],
-            },
-        }
-
-        self.tools["isolate_endpoint"] = {
-            "name": "isolate_endpoint",
-            "description": "Isolate an endpoint from the network to prevent further compromise or lateral movement. This is a critical response action.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "endpoint_id": {
-                        "type": "string",
-                        "description": "The endpoint ID to isolate",
-                    }
-                },
-                "required": ["endpoint_id"],
-            },
-        }
-
-        self.tools["release_endpoint_isolation"] = {
-            "name": "release_endpoint_isolation",
-            "description": "Release an endpoint from network isolation, restoring normal network connectivity.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "endpoint_id": {
-                        "type": "string",
-                        "description": "The endpoint ID to release",
-                    }
-                },
-                "required": ["endpoint_id"],
-            },
-        }
-
-        self.tools["kill_process_on_endpoint"] = {
-            "name": "kill_process_on_endpoint",
-            "description": "Terminate a specific process running on an endpoint by its process ID. Use with caution as this is a disruptive action.",
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "endpoint_id": {
-                        "type": "string",
-                        "description": "The endpoint ID",
-                    },
-                    "pid": {
-                        "type": "integer",
-                        "description": "The process ID to kill",
-                    },
-                },
-                "required": ["endpoint_id", "pid"],
             },
         }
 
@@ -3298,34 +3254,6 @@ To be populated during investigation.
                 client=self.edr_client,
             )
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
-            return result
-        elif tool_name == "isolate_endpoint" and self.edr_client:
-            result = tools_edr.isolate_endpoint(
-                endpoint_id=args["endpoint_id"],
-                client=self.edr_client,
-            )
-            self._mcp_logger.warning(
-                f"Tool {tool_name} executed: endpoint {args['endpoint_id']} isolated"
-            )
-            return result
-        elif tool_name == "release_endpoint_isolation" and self.edr_client:
-            result = tools_edr.release_endpoint_isolation(
-                endpoint_id=args["endpoint_id"],
-                client=self.edr_client,
-            )
-            self._mcp_logger.info(
-                f"Tool {tool_name} executed: endpoint {args['endpoint_id']} isolation released"
-            )
-            return result
-        elif tool_name == "kill_process_on_endpoint" and self.edr_client:
-            result = tools_edr.kill_process_on_endpoint(
-                endpoint_id=args["endpoint_id"],
-                pid=args["pid"],
-                client=self.edr_client,
-            )
-            self._mcp_logger.warning(
-                f"Tool {tool_name} executed: process {args['pid']} killed on endpoint {args['endpoint_id']}"
-            )
             return result
         elif tool_name == "collect_forensic_artifacts" and self.edr_client:
             result = tools_edr.collect_forensic_artifacts(

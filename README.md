@@ -282,20 +282,25 @@ report = get_file_report(file_hash="abc123...")
 related_events = pivot_on_indicator("192.168.1.100")
 ```
 
-### EDR Response
+### EDR Investigation
+
+Investigation-only: there is no tool to isolate an endpoint or kill a process. Endpoint isolation
+and process termination are always performed by a human analyst directly in the EDR platform.
 
 ```python
 # Get endpoint summary
 endpoint = get_endpoint_summary(endpoint_id="host-123")
 
-# Isolate an endpoint
-isolate_endpoint(endpoint_id="host-123")
-
-# Collect forensic artifacts
+# Collect forensic artifacts (evidence gathering, not remediation)
 collect_forensic_artifacts(
     endpoint_id="host-123",
     artifact_types=["processes", "network", "filesystem"]
 )
+
+# If containment looks warranted, draft a recommendation for a human analyst instead of
+# attempting to act:
+add_case_comment(case_id="123", content="Recommend isolating host-123: ...")
+add_case_task(case_id="123", title="Human approval required: isolate host-123", ...)
 ```
 
 ### Agent Profile Execution

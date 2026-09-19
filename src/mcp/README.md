@@ -51,14 +51,14 @@ Tools for security event analysis:
 - `search_user_activity` - User activity investigation
 - `pivot_on_indicator` - IOC-based investigation
 
-### EDR Tools (6 tools)
-Tools for endpoint investigation and response:
+### EDR Tools (3 tools, investigation-only)
+Tools for endpoint investigation and evidence gathering. This agent is a human-in-the-loop
+investigation copilot: there are intentionally **no** tools for endpoint isolation, releasing
+isolation, or process termination. Those active response actions must always be performed by
+a human analyst directly in the EDR platform.
 - `get_endpoint_summary` - Endpoint overview
 - `get_detection_details` - Detection analysis
-- `isolate_endpoint` - Network isolation (critical)
-- `release_endpoint_isolation` - Restore connectivity
-- `kill_process_on_endpoint` - Terminate processes (disruptive)
-- `collect_forensic_artifacts` - Evidence collection
+- `collect_forensic_artifacts` - Evidence collection (read-only from the agent's perspective)
 
 ### Rules Engine Tools (2 tools)
 Tools for automated workflows:
@@ -144,11 +144,14 @@ Use `list_rules` to discover available automated workflows.
 
 ## Security Considerations
 
-⚠️ **Critical Actions**: Some tools perform disruptive operations:
-- `isolate_endpoint` - Disconnects endpoint from network
-- `kill_process_on_endpoint` - Terminates running processes
-
-Always verify parameters before executing critical actions. These operations are logged at WARNING level.
+⚠️ **Human-in-the-loop by design**: this MCP server never exposes active response / remediation
+tools to the agent (endpoint isolation, releasing isolation, process termination, or any other
+containment action). The agent may only investigate (read data, enrich indicators, collect
+forensic artifacts) and draft recommendations for a human analyst; the analyst always makes the
+final decision and executes any response action directly in the relevant platform (EDR, SIEM,
+etc.). Do not add tool registrations for active response actions - see
+`src/orchestrator/tools_edr.py` and `_register_edr_tools()` in `mcp_server.py` for the enforced
+boundary.
 
 ## Development
 

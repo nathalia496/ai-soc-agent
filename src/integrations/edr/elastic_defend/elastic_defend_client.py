@@ -14,10 +14,8 @@ from ....api.edr import (
     DetectionType,
     EDRClient,
     Endpoint,
-    KillProcessAction,
     Platform,
     Process,
-    QuarantineAction,
 )
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
@@ -240,83 +238,11 @@ class ElasticDefendEDRClient:
             logger.exception(f"Error listing detections: {e}")
             raise IntegrationError(f"Failed to list detections: {e}") from e
 
-    def isolate_endpoint(self, endpoint_id: str) -> QuarantineAction:
-        """Isolate an endpoint (quarantine)."""
-        try:
-            # Use Endpoint Security API to isolate
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "isolate"
-            }
-            
-            response = self._http.post("/api/endpoint/action/isolate", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return QuarantineAction(
-                endpoint_id=endpoint_id,
-                requested_at=datetime.utcnow(),
-                result=ActionResult.PENDING,
-                message=f"Isolation action submitted: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error isolating endpoint: {e}")
-            raise IntegrationError(f"Failed to isolate endpoint: {e}") from e
-
-    def release_endpoint_isolation(self, endpoint_id: str) -> QuarantineAction:
-        """Release endpoint from isolation."""
-        try:
-            # Use Endpoint Security API to unisolate
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "unisolate"
-            }
-            
-            response = self._http.post("/api/endpoint/action/unisolate", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return QuarantineAction(
-                endpoint_id=endpoint_id,
-                requested_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
-                result=ActionResult.SUCCESS,
-                message=f"Isolation released: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error releasing endpoint isolation: {e}")
-            raise IntegrationError(f"Failed to release endpoint isolation: {e}") from e
-
-    def kill_process_on_endpoint(
-        self,
-        endpoint_id: str,
-        pid: int,
-    ) -> KillProcessAction:
-        """Kill a process on an endpoint."""
-        try:
-            # Use Endpoint Security API to kill process
-            payload = {
-                "endpoint_ids": [endpoint_id],
-                "action_type": "kill-process",
-                "parameters": {
-                    "pid": pid
-                }
-            }
-            
-            response = self._http.post("/api/endpoint/action/kill-process", json_data=payload)
-            
-            action_id = response.get("data", {}).get("id")
-            
-            return KillProcessAction(
-                endpoint_id=endpoint_id,
-                pid=pid,
-                requested_at=datetime.utcnow(),
-                result=ActionResult.PENDING,
-                message=f"Kill process action submitted: {action_id}",
-            )
-        except Exception as e:
-            logger.exception(f"Error killing process: {e}")
-            raise IntegrationError(f"Failed to kill process: {e}") from e
+    # NOTE: Active response actions (endpoint isolation, releasing isolation,
+    # process termination) are intentionally NOT implemented here. This agent
+    # is a human-in-the-loop investigation copilot and must never execute
+    # remediation actions itself; those calls belong to a human analyst
+    # acting directly through the Elastic Defend console/API.
 
     def collect_forensic_artifacts(
         self,
