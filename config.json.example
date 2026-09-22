@@ -50,6 +50,12 @@
     "timeout_seconds": 30,
     "verify_ssl": false
   },
+  "ollama": {
+    "_comment": "Optional: local Ollama server for structured report generation (OpenAI-compatible endpoint). Requires the model to be pulled first, e.g. 'ollama pull llama3.1'.",
+    "base_url": "http://localhost:11434/v1",
+    "model": "llama3.1",
+    "timeout_seconds": 60
+  },
   "ai_controller": {
     "_comment": "AI Controller configuration for managing agent executions",
     "storage_dir": "data/ai_controller",

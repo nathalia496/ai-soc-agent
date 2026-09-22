@@ -101,6 +101,20 @@ class MISPConfig:
 
 
 @dataclass
+class OllamaConfig:
+    """
+    Configuration for the local Ollama LLM (used for structured report generation).
+
+    Points at Ollama's OpenAI-compatible API. The model must already be pulled
+    in the local Ollama instance (e.g. ``ollama pull llama3.1``).
+    """
+
+    base_url: str = "http://localhost:11434/v1"
+    model: str = "llama3.1"
+    timeout_seconds: int = 60
+
+
+@dataclass
 class TrelloConfig:
     """
     Configuration for Trello integration.
@@ -187,6 +201,7 @@ class SamiConfig:
     edr: Optional[EDRConfig] = None
     cti: Optional[CTIConfig] = None
     misp: Optional[MISPConfig] = None
+    ollama: Optional[OllamaConfig] = None
     eng: Optional[EngConfig] = None
     logging: Optional[LoggingConfig] = None
     web: Optional[WebConfig] = None

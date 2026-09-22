@@ -23,6 +23,7 @@ from .config import (
     IrisConfig,
     LoggingConfig,
     MISPConfig,
+    OllamaConfig,
     SamiConfig,
     TheHiveConfig,
     TrelloConfig,
@@ -95,6 +96,13 @@ def _config_to_dict(config: SamiConfig) -> Dict[str, Any]:
             "api_key": config.misp.api_key,
             "timeout_seconds": config.misp.timeout_seconds,
             "verify_ssl": config.misp.verify_ssl,
+        }
+
+    if config.ollama:
+        result["ollama"] = {
+            "base_url": config.ollama.base_url,
+            "model": config.ollama.model,
+            "timeout_seconds": config.ollama.timeout_seconds,
         }
 
     if config.eng:
@@ -215,6 +223,15 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
                 verify_ssl=misp_data.get("verify_ssl", True),
             )
 
+    ollama_cfg: Optional[OllamaConfig] = None
+    if "ollama" in data and data["ollama"]:
+        ollama_data = data["ollama"]
+        ollama_cfg = OllamaConfig(
+            base_url=ollama_data.get("base_url", "http://localhost:11434/v1"),
+            model=ollama_data.get("model", "llama3.1"),
+            timeout_seconds=ollama_data.get("timeout_seconds", 60),
+        )
+
     eng_cfg: Optional[EngConfig] = None
     if "eng" in data and data["eng"]:
         eng_data = data["eng"]
@@ -273,6 +290,7 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
         edr=edr_cfg,
         cti=cti_cfg,
         misp=misp_cfg,
+        ollama=ollama_cfg,
         eng=eng_cfg,
         logging=logging_cfg,
     )
@@ -700,6 +718,18 @@ def update_config_dict(
                 api_key=misp_updates["api_key"],
                 timeout_seconds=misp_updates.get("timeout_seconds", 30),
                 verify_ssl=misp_updates.get("verify_ssl", True),
+            )
+
+    # Update Ollama
+    if "ollama" in updates:
+        ollama_updates = updates["ollama"]
+        if ollama_updates is None:
+            config.ollama = None
+        else:
+            config.ollama = OllamaConfig(
+                base_url=ollama_updates.get("base_url", "http://localhost:11434/v1"),
+                model=ollama_updates.get("model", "llama3.1"),
+                timeout_seconds=ollama_updates.get("timeout_seconds", 60),
             )
 
     # Update EDR
