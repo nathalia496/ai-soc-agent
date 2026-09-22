@@ -43,6 +43,13 @@
     "timeout_seconds": 30,
     "verify_ssl": false
   },
+  "misp": {
+    "_comment": "Optional: MISP threat intel lookup by IP or hash (returns tags and event context)",
+    "base_url": "https://misp.example.com",
+    "api_key": "your-misp-api-key-here",
+    "timeout_seconds": 30,
+    "verify_ssl": false
+  },
   "ai_controller": {
     "_comment": "AI Controller configuration for managing agent executions",
     "storage_dir": "data/ai_controller",
