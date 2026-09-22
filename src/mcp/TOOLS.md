@@ -840,6 +840,7 @@ The following checklist shows which SIEM tools are currently implemented:
 - [x] `get_ip_address_report`
 - [x] `search_user_activity`
 - [x] `pivot_on_indicator`
+- [x] `get_logs_for_alert`
 - [x] `search_kql_query`
 
 **Alert Management Tools:**
@@ -1129,6 +1130,47 @@ Given an IOC (file hash, IP address, domain, etc.), search for all related secur
 - Find all occurrences of an IOC
 - Correlate indicators across systems
 - Threat hunting
+
+---
+
+### `get_logs_for_alert`
+
+Given a SIEM alert ID, fetch nearby logs/evidence by looking up the alert's own host, user, and
+source/destination IP, then searching for events that share those entities within a time window
+around the alert's timestamp. This is the primary tool for gathering the surrounding context
+needed to investigate an alert - use it right after pulling the alert with
+`get_security_alert_by_id` or `get_recent_alerts`.
+
+**Parameters:**
+- `alert_id` (string, required): The alert ID to gather context for
+- `minutes_before` (integer, optional): Minutes before the alert's timestamp to include (default: 30)
+- `minutes_after` (integer, optional): Minutes after the alert's timestamp to include (default: 30)
+- `limit` (integer, optional): Maximum number of log events to return (default: 200)
+
+**Returns:**
+- `success` (boolean): Whether the operation succeeded
+- `alert_id` (string): The alert ID queried
+- `query` (string): Human-readable summary of the window/entities searched
+- `total_count` (integer): Total number of matching log events
+- `returned_count` (integer): Number of events returned
+- `events` (array): List of matching log events (same shape as `search_security_events`)
+
+**Usage Example:**
+```json
+{
+  "name": "get_logs_for_alert",
+  "arguments": {
+    "alert_id": "alert-12345",
+    "minutes_before": 15,
+    "minutes_after": 15
+  }
+}
+```
+
+**Use Cases:**
+- Build the timeline of activity around an alert
+- Gather evidence for a case before drafting an investigation summary
+- Confirm whether an alert is isolated or part of a broader pattern on the same host/user/IP
 
 ---
 

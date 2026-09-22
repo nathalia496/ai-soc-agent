@@ -5,7 +5,7 @@ Elasticsearch/Elastic SIEM implementation of the generic ``SIEMClient`` interfac
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
 from ....api.siem import (
@@ -1222,6 +1222,175 @@ class ElasticSIEMClient:
         except Exception as e:
             logger.exception(f"Error getting raw alert document {alert_id}: {e}")
             raise IntegrationError(f"Failed to get raw alert document: {e}") from e
+
+    def get_logs_for_alert(
+        self,
+        alert_id: str,
+        minutes_before: int = 30,
+        minutes_after: int = 30,
+        limit: int = 200,
+    ) -> QueryResult:
+        """
+        Fetch nearby logs/evidence associated with an alert.
+
+        Reads the alert document, extracts whichever of host/user/source-ip/
+        destination-ip it has, and searches the log indices for events that
+        share at least one of those entities within a time window around the
+        alert's own timestamp.
+        """
+        try:
+            source = self.get_raw_alert_document(alert_id)
+
+            # Timestamp: center the window on the alert's own @timestamp.
+            timestamp_str = source.get("@timestamp")
+            center_time = datetime.utcnow()
+            if timestamp_str:
+                try:
+                    center_time = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                except Exception:
+                    pass
+
+            window_start = (center_time - timedelta(minutes=minutes_before)).isoformat()
+            window_end = (center_time + timedelta(minutes=minutes_after)).isoformat()
+
+            # Extract whichever identifying entities the alert has.
+            host_value = None
+            host_obj = source.get("host")
+            if isinstance(host_obj, dict):
+                host_value = host_obj.get("name")
+            elif isinstance(host_obj, str):
+                host_value = host_obj
+            if not host_value:
+                host_value = source.get("hostname")
+
+            user_value = None
+            user_obj = source.get("user")
+            if isinstance(user_obj, dict):
+                user_value = user_obj.get("name")
+            elif isinstance(user_obj, str):
+                user_value = user_obj
+
+            source_ip = source.get("source", {}).get("ip") if isinstance(source.get("source"), dict) else None
+            destination_ip = source.get("destination", {}).get("ip") if isinstance(source.get("destination"), dict) else None
+
+            entity_clauses = []
+            if host_value:
+                entity_clauses.append({
+                    "bool": {
+                        "should": [
+                            {"match": {"host.name": host_value}},
+                            {"match": {"hostname": host_value}},
+                            {"match": {"host": host_value}},
+                        ]
+                    }
+                })
+            if user_value:
+                entity_clauses.append({
+                    "bool": {
+                        "should": [
+                            {"match": {"user.name": user_value}},
+                            {"match": {"user": user_value}},
+                            {"match": {"username": user_value}},
+                        ]
+                    }
+                })
+            if source_ip:
+                entity_clauses.append({
+                    "bool": {
+                        "should": [
+                            {"match": {"source.ip": source_ip}},
+                            {"match": {"destination.ip": source_ip}},
+                            {"match": {"client.ip": source_ip}},
+                        ]
+                    }
+                })
+            if destination_ip and destination_ip != source_ip:
+                entity_clauses.append({
+                    "bool": {
+                        "should": [
+                            {"match": {"source.ip": destination_ip}},
+                            {"match": {"destination.ip": destination_ip}},
+                            {"match": {"server.ip": destination_ip}},
+                        ]
+                    }
+                })
+
+            must_clauses = [
+                {"range": {"@timestamp": {"gte": window_start, "lte": window_end}}}
+            ]
+            if entity_clauses:
+                # Match the time window AND at least one shared entity.
+                must_clauses.append({"bool": {"should": entity_clauses, "minimum_should_match": 1}})
+
+            query = {
+                "query": {"bool": {"must": must_clauses}},
+                "size": limit,
+                "sort": [{"@timestamp": {"order": "asc"}}],
+            }
+
+            indices_patterns = [
+                "logs-*,security-*,winlogbeat-*,filebeat-*",
+                "_all",
+            ]
+            response = self._search_with_fallback(indices_patterns, query)
+
+            hits = response.get("hits", {}).get("hits", [])
+            total = response.get("hits", {}).get("total", {})
+            total_count = total.get("value", len(hits)) if isinstance(total, dict) else total
+
+            events = []
+            for hit in hits[:limit]:
+                hit_source = hit.get("_source", {})
+                hit_timestamp_str = hit_source.get("@timestamp") or hit_source.get("timestamp")
+                hit_timestamp = None
+                if hit_timestamp_str:
+                    try:
+                        hit_timestamp = datetime.fromisoformat(hit_timestamp_str.replace("Z", "+00:00"))
+                    except Exception:
+                        pass
+                if not hit_timestamp:
+                    hit_timestamp = center_time
+
+                index = hit.get("_index", "")
+                event_source_type = SourceType.OTHER
+                if "winlogbeat" in index or "windows" in index.lower():
+                    event_source_type = SourceType.ENDPOINT
+                elif "network" in index.lower() or "firewall" in index.lower():
+                    event_source_type = SourceType.NETWORK
+                elif "auth" in index.lower() or "login" in index.lower():
+                    event_source_type = SourceType.AUTH
+                elif "cloud" in index.lower():
+                    event_source_type = SourceType.CLOUD
+
+                events.append(SiemEvent(
+                    id=hit.get("_id", ""),
+                    timestamp=hit_timestamp,
+                    source_type=event_source_type,
+                    message=hit_source.get("message", hit_source.get("event", {}).get("original", "")),
+                    host=hit_source.get("host", {}).get("name") if isinstance(hit_source.get("host"), dict) else hit_source.get("host"),
+                    username=hit_source.get("user", {}).get("name") if isinstance(hit_source.get("user"), dict) else hit_source.get("user"),
+                    ip=hit_source.get("source", {}).get("ip") if isinstance(hit_source.get("source"), dict) else hit_source.get("source.ip"),
+                    process_name=hit_source.get("process", {}).get("name") if isinstance(hit_source.get("process"), dict) else hit_source.get("process.name"),
+                    file_hash=hit_source.get("file", {}).get("hash", {}).get("sha256") if isinstance(hit_source.get("file"), dict) else hit_source.get("file.hash.sha256"),
+                    raw=hit_source,
+                ))
+
+            query_summary = (
+                f"logs for alert {alert_id} in [{window_start}, {window_end}] "
+                f"matching host={host_value}, user={user_value}, "
+                f"source_ip={source_ip}, destination_ip={destination_ip}"
+            )
+
+            return QueryResult(
+                query=query_summary,
+                events=events,
+                total_count=total_count,
+            )
+        except IntegrationError:
+            raise
+        except Exception as e:
+            logger.exception(f"Error getting logs for alert {alert_id}: {e}")
+            raise IntegrationError(f"Failed to get logs for alert {alert_id}: {e}") from e
 
     def close_alert(
         self,

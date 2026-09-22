@@ -14,12 +14,14 @@
     "timeout_seconds": 30
   },
   "elastic": {
-    "base_url": "https://elastic.example.com:9200",
-    "api_key": "your-elastic-api-key-here",
-    "username": "elastic",
-    "password": "your-elastic-password-here",
+    "_comment": "SIEM/log backend. Defaults below target the local OpenSearch container from docker-compose.yml (DISABLE_SECURITY_PLUGIN=true), so no api_key/username/password/TLS is needed. For a real Elasticsearch/Elastic Cloud deployment, set siem_type to 'elasticsearch', use an https:// base_url, and provide api_key or username/password.",
+    "siem_type": "opensearch",
+    "base_url": "http://localhost:9200",
+    "api_key": null,
+    "username": null,
+    "password": null,
     "timeout_seconds": 30,
-    "verify_ssl": true
+    "verify_ssl": false
   },
   "edr": {
     "edr_type": "velociraptor",

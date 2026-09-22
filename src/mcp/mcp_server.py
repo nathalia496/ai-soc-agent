@@ -1042,6 +1042,7 @@ class SamiGPTMCPServer:
         - get_ip_address_report: Get IP reputation, geolocation, and related alerts
         - search_user_activity: Search security events related to a specific user
         - pivot_on_indicator: Search for all events related to an IOC (hash, IP, domain, etc.)
+        - get_logs_for_alert: Fetch nearby logs/evidence for an alert (by host/user/IP and time window)
         - search_kql_query: Execute KQL or advanced queries for deeper investigations
         
         See TOOLS.md for detailed documentation and usage examples.
@@ -1052,7 +1053,7 @@ class SamiGPTMCPServer:
                 "Configure Elastic or other SIEM in config.json to enable SIEM tools."
             )
             return
-        self._mcp_logger.info(f"Registering {26} SIEM tools")
+        self._mcp_logger.info(f"Registering {27} SIEM tools")
 
         self.tools["search_security_events"] = {
             "name": "search_security_events",
@@ -1162,6 +1163,36 @@ class SamiGPTMCPServer:
                     },
                 },
                 "required": ["indicator"],
+            },
+        }
+
+        self.tools["get_logs_for_alert"] = {
+            "name": "get_logs_for_alert",
+            "description": "Given a SIEM alert ID, fetch nearby logs/evidence by looking up the alert's own host, user, and source/destination IP, then searching for events that share those entities within a time window around the alert's timestamp. Use this right after pulling an alert to gather surrounding context for investigation.",
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "alert_id": {
+                        "type": "string",
+                        "description": "The alert ID to gather context for",
+                    },
+                    "minutes_before": {
+                        "type": "integer",
+                        "description": "Minutes before the alert's timestamp to include in the search window",
+                        "default": 30,
+                    },
+                    "minutes_after": {
+                        "type": "integer",
+                        "description": "Minutes after the alert's timestamp to include in the search window",
+                        "default": 30,
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of log events to return",
+                        "default": 200,
+                    },
+                },
+                "required": ["alert_id"],
             },
         }
 
@@ -3027,6 +3058,16 @@ To be populated during investigation.
             )
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
             return result
+        elif tool_name == "get_logs_for_alert" and self.siem_client:
+            result = tools_siem.get_logs_for_alert(
+                alert_id=args["alert_id"],
+                minutes_before=args.get("minutes_before", 30),
+                minutes_after=args.get("minutes_after", 30),
+                limit=args.get("limit", 200),
+                client=self.siem_client,
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
         elif tool_name == "search_kql_query" and self.siem_client:
             result = tools_siem.search_kql_query(
                 kql_query=args["kql_query"],
@@ -3627,20 +3668,20 @@ async def main() -> None:
     else:
         mcp_logger.warning("No case management system configured (neither IRIS nor TheHive)")
 
-    # Initialize SIEM client
+    # Initialize SIEM client (Elasticsearch or OpenSearch - same wire protocol)
     siem_client = None
     if config.elastic:
+        siem_label = config.elastic.siem_type or "elasticsearch"
         try:
-            mcp_logger.info("Attempting to initialize Elastic SIEM client...")
+            mcp_logger.info(f"Attempting to initialize SIEM client ({siem_label})...")
             siem_client = ElasticSIEMClient.from_config(config)
-            logger.info("Elastic SIEM client initialized")
-            mcp_logger.info("✓ Elastic SIEM client initialized successfully")
-            if config.elastic:
-                mcp_logger.info(f"    Elastic URL: {config.elastic.base_url}")
-                mcp_logger.info(f"    Elastic API key: {'*' * 20}...{config.elastic.api_key[-10:] if config.elastic.api_key and len(config.elastic.api_key) > 10 else '***'}")
+            logger.info(f"SIEM client initialized ({siem_label})")
+            mcp_logger.info(f"✓ SIEM client initialized successfully ({siem_label})")
+            mcp_logger.info(f"    SIEM URL: {config.elastic.base_url}")
+            mcp_logger.info(f"    SIEM auth: {'API key' if config.elastic.api_key else ('basic auth' if config.elastic.username else 'none (e.g. DISABLE_SECURITY_PLUGIN)')}")
         except Exception as e:
-            logger.error(f"Failed to initialize Elastic SIEM client: {e}")
-            mcp_logger.error(f"✗ Failed to initialize Elastic SIEM client: {e}", exc_info=True)
+            logger.error(f"Failed to initialize SIEM client ({siem_label}): {e}")
+            mcp_logger.error(f"✗ Failed to initialize SIEM client ({siem_label}): {e}", exc_info=True)
     
     # Initialize EDR client
     edr_client = None

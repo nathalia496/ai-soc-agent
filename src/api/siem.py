@@ -160,6 +160,7 @@ class SIEMClient(Protocol):
     - get_ip_address_report
     - search_user_activity
     - pivot_on_indicator
+    - get_logs_for_alert
     """
 
     def search_security_events(
@@ -292,16 +293,41 @@ class SIEMClient(Protocol):
     ) -> Dict[str, Any]:
         """
         Add a note/comment to an alert in the SIEM.
-        
+
         This is used to document investigation findings, recommendations,
         or other relevant information about the alert.
-        
+
         Args:
             alert_id: The ID of the alert to add a note to.
             note: The note/comment text to add.
-        
+
         Returns:
             Dictionary with success status and alert details including the note.
+        """
+        ...
+
+    def get_logs_for_alert(
+        self,
+        alert_id: str,
+        minutes_before: int = 30,
+        minutes_after: int = 30,
+        limit: int = 200,
+    ) -> QueryResult:
+        """
+        Fetch nearby logs/evidence associated with an alert.
+
+        Looks up the alert, extracts its entities (host, user, source/destination
+        IP) and timestamp, then searches surrounding log indices for events that
+        share those entities within a time window around the alert.
+
+        Args:
+            alert_id: The ID of the alert to gather context for.
+            minutes_before: How many minutes before the alert's timestamp to include.
+            minutes_after: How many minutes after the alert's timestamp to include.
+            limit: Maximum number of log events to return.
+
+        Returns:
+            QueryResult containing matching log events.
         """
         ...
 

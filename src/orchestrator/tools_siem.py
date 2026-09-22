@@ -358,6 +358,83 @@ def pivot_on_indicator(
         raise IntegrationError(f"Failed to pivot on indicator {indicator}: {str(e)}") from e
 
 
+def get_logs_for_alert(
+    alert_id: str,
+    minutes_before: int = 30,
+    minutes_after: int = 30,
+    limit: int = 200,
+    client: SIEMClient = None,  # type: ignore
+) -> Dict[str, Any]:
+    """
+    Get nearby logs/evidence associated with an alert.
+
+    Tool schema:
+    - name: get_logs_for_alert
+    - description: Given a SIEM alert ID, fetch nearby logs/evidence by
+      looking up the alert's own host, user, and source/destination IP,
+      then searching for events that share those entities within a time
+      window around the alert's timestamp. Use this right after pulling an
+      alert to gather the surrounding context needed for investigation.
+    - parameters:
+      - alert_id (str, required): The alert ID to gather context for.
+      - minutes_before (int, optional): Minutes before the alert's timestamp
+        to include in the search window (default: 30).
+      - minutes_after (int, optional): Minutes after the alert's timestamp to
+        include in the search window (default: 30).
+      - limit (int, optional): Maximum number of log events to return (default: 200).
+
+    Args:
+        alert_id: The alert ID.
+        minutes_before: Minutes before the alert's timestamp to search.
+        minutes_after: Minutes after the alert's timestamp to search.
+        limit: Maximum number of events to return.
+        client: The SIEM client.
+
+    Returns:
+        Dictionary containing the matching log events.
+
+    Raises:
+        IntegrationError: If retrieval fails.
+    """
+    if client is None:
+        raise IntegrationError("SIEM client not provided")
+
+    if not hasattr(client, "get_logs_for_alert"):
+        raise IntegrationError("SIEM client does not support get_logs_for_alert")
+
+    try:
+        result = client.get_logs_for_alert(
+            alert_id=alert_id,
+            minutes_before=minutes_before,
+            minutes_after=minutes_after,
+            limit=limit,
+        )
+
+        return {
+            "success": True,
+            "alert_id": alert_id,
+            "query": result.query,
+            "total_count": result.total_count,
+            "returned_count": len(result.events),
+            "events": [
+                {
+                    "id": event.id,
+                    "timestamp": event.timestamp.isoformat(),
+                    "source_type": event.source_type.value,
+                    "message": event.message,
+                    "host": event.host,
+                    "username": event.username,
+                    "ip": event.ip,
+                    "process_name": event.process_name,
+                    "file_hash": event.file_hash,
+                }
+                for event in result.events
+            ],
+        }
+    except Exception as e:
+        raise IntegrationError(f"Failed to get logs for alert {alert_id}: {str(e)}") from e
+
+
 def get_recent_alerts(
     hours_back: int = 1,
     max_alerts: int = 100,
