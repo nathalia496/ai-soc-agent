@@ -80,6 +80,18 @@ class CTIConfig:
 
 
 @dataclass
+class MISPConfig:
+    """
+    Configuration for the MISP (threat intel) integration.
+    """
+
+    base_url: str
+    api_key: str
+    timeout_seconds: int = 30
+    verify_ssl: bool = True
+
+
+@dataclass
 class TrelloConfig:
     """
     Configuration for Trello integration.
@@ -165,6 +177,7 @@ class SamiConfig:
     elastic: Optional[ElasticConfig] = None
     edr: Optional[EDRConfig] = None
     cti: Optional[CTIConfig] = None
+    misp: Optional[MISPConfig] = None
     eng: Optional[EngConfig] = None
     logging: Optional[LoggingConfig] = None
     web: Optional[WebConfig] = None

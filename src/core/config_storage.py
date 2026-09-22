@@ -22,6 +22,7 @@ from .config import (
     GitHubConfig,
     IrisConfig,
     LoggingConfig,
+    MISPConfig,
     SamiConfig,
     TheHiveConfig,
     TrelloConfig,
@@ -85,6 +86,14 @@ def _config_to_dict(config: SamiConfig) -> Dict[str, Any]:
             "api_key": config.cti.api_key,
             "timeout_seconds": config.cti.timeout_seconds,
             "verify_ssl": config.cti.verify_ssl,
+        }
+
+    if config.misp:
+        result["misp"] = {
+            "base_url": config.misp.base_url,
+            "api_key": config.misp.api_key,
+            "timeout_seconds": config.misp.timeout_seconds,
+            "verify_ssl": config.misp.verify_ssl,
         }
 
     if config.eng:
@@ -193,6 +202,17 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
                 verify_ssl=cti_data.get("verify_ssl", True),
             )
 
+    misp_cfg: Optional[MISPConfig] = None
+    if "misp" in data and data["misp"]:
+        misp_data = data["misp"]
+        if misp_data.get("base_url") and misp_data.get("api_key"):
+            misp_cfg = MISPConfig(
+                base_url=misp_data["base_url"],
+                api_key=misp_data["api_key"],
+                timeout_seconds=misp_data.get("timeout_seconds", 30),
+                verify_ssl=misp_data.get("verify_ssl", True),
+            )
+
     eng_cfg: Optional[EngConfig] = None
     if "eng" in data and data["eng"]:
         eng_data = data["eng"]
@@ -250,6 +270,7 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
         elastic=elastic_cfg,
         edr=edr_cfg,
         cti=cti_cfg,
+        misp=misp_cfg,
         eng=eng_cfg,
         logging=logging_cfg,
     )
@@ -661,6 +682,19 @@ def update_config_dict(
                 password=el_updates.get("password"),
                 timeout_seconds=el_updates.get("timeout_seconds", 30),
                 verify_ssl=el_updates.get("verify_ssl", True),
+            )
+
+    # Update MISP
+    if "misp" in updates:
+        misp_updates = updates["misp"]
+        if misp_updates is None:
+            config.misp = None
+        elif misp_updates.get("base_url") and misp_updates.get("api_key"):
+            config.misp = MISPConfig(
+                base_url=misp_updates["base_url"],
+                api_key=misp_updates["api_key"],
+                timeout_seconds=misp_updates.get("timeout_seconds", 30),
+                verify_ssl=misp_updates.get("verify_ssl", True),
             )
 
     # Update EDR
