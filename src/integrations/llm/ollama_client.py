@@ -22,6 +22,23 @@ logger = get_logger("sami.integrations.llm.ollama.client")
 
 REQUIRED_REPORT_KEYS: List[str] = ["timeline", "observables", "hypothesis", "next_steps"]
 
+
+def _strip_code_fence(content: str) -> str:
+    """
+    Strip a leading/trailing ``` or ```json code fence some models add despite
+    being asked for raw JSON. ``response_format: json_object`` should already
+    prevent this, but this is a cheap fallback for models/backends that ignore it.
+    """
+    text = content.strip()
+    if not text.startswith("```"):
+        return text
+    text = text[3:]
+    if text.startswith("json"):
+        text = text[4:]
+    if text.endswith("```"):
+        text = text[:-3]
+    return text.strip()
+
 REPORT_SYSTEM_PROMPT = """You are a SOC (Security Operations Center) analysis assistant.
 
 Your role is strictly advisory: you analyze the investigation context you are given \
@@ -102,9 +119,10 @@ class OllamaClient:
                 one or more required keys.
         """
         raw_content = self._http.chat_completion(REPORT_SYSTEM_PROMPT, context)
+        content = _strip_code_fence(raw_content)
 
         try:
-            report = json.loads(raw_content)
+            report = json.loads(content)
         except json.JSONDecodeError as e:
             logger.error(f"Ollama response was not valid JSON: {raw_content[:500]!r}")
             raise ValidationError(

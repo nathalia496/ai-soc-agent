@@ -73,6 +73,9 @@ class OllamaHttpClient:
                 {"role": "user", "content": user_prompt},
             ],
             "stream": False,
+            # Constrains decoding to valid JSON so the model can't wrap its reply
+            # in ```-fenced prose despite the system prompt asking it not to.
+            "response_format": {"type": "json_object"},
         }
 
         try:
