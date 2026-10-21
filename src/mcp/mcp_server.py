@@ -37,6 +37,7 @@ from ..integrations.siem.elastic.elastic_client import ElasticSIEMClient
 from ..integrations.edr.elastic_defend.elastic_defend_client import ElasticDefendEDRClient
 from ..integrations.cti.local_tip.local_tip_client import LocalTipCTIClient
 from ..integrations.cti.opencti.opencti_client import OpenCTIClient
+from ..integrations.cti.misp.misp_client import MISPClient
 from ..integrations.kb import FileSystemKBClient
 from ..integrations.eng.trello.trello_client import TrelloClient
 from ..integrations.eng.clickup.clickup_client import ClickUpClient
@@ -147,6 +148,7 @@ class SamiGPTMCPServer:
         edr_client: Optional[EDRClient] = None,
         cti_client: Optional[Any] = None,
         cti_clients: Optional[list] = None,
+        misp_client: Optional[MISPClient] = None,
         kb_client: Optional[KBClient] = None,
         eng_client: Optional[Union[TrelloClient, ClickUpClient, GitHubClient]] = None,
     ):
@@ -159,6 +161,7 @@ class SamiGPTMCPServer:
             edr_client: EDR client.
             cti_client: CTI (Cyber Threat Intelligence) client (single, for backward compatibility).
             cti_clients: List of CTI clients (for multi-platform support).
+            misp_client: MISP client (independent of cti_client/cti_clients).
         """
         self.case_client = case_client
         self.siem_client = siem_client
@@ -170,6 +173,7 @@ class SamiGPTMCPServer:
         else:
             self.cti_clients = [cti_client] if cti_client else []
             self.cti_client = cti_client
+        self.misp_client = misp_client
         # KB client defaults to filesystem-based client so it is always available
         self.kb_client: KBClient = kb_client or FileSystemKBClient()
         self.eng_client = eng_client
@@ -1858,42 +1862,72 @@ class SamiGPTMCPServer:
     def _register_cti_tools(self) -> None:
         """
         Register CTI (Cyber Threat Intelligence) tools.
-        
+
         Available tools:
         - lookup_hash_ti: Look up a file hash in the threat intelligence platform
-        
+        - lookup_ioc_misp: Look up an IP address or file hash in MISP
+
         See TOOLS.md for detailed documentation and usage examples.
         """
-        if not self.cti_client:
-            self._mcp_logger.warning(
-                "CTI tools not registered: No CTI client configured. "
-                "Configure CTI platform in config.json to enable CTI tools."
-            )
-            return
-        self._mcp_logger.info(f"Registering {1} CTI tool")
+        if self.cti_client:
+            self._mcp_logger.info("Registering 1 CTI tool (lookup_hash_ti)")
 
-        self.tools["lookup_hash_ti"] = {
-            "name": "lookup_hash_ti",
-            "description": (
-                "Look up a file hash (MD5, SHA1, SHA256, SHA512) in threat intelligence platforms to determine if it's malicious, suspicious, or benign. "
-                "Returns threat scores, classifications, indicators, labels, and MITRE ATT&CK kill chain phases. "
-                "Use this to: (1) Check if a hash is known malicious - look for 'classification: malicious', high threat_score (>70), or labels like 'malware', 'trojan', 'ransomware'. "
-                "(2) Assess threat level - threat_score 0-30=benign, 31-60=suspicious, 61-100=malicious. "
-                "(3) Understand attack context - review kill_chain_phases and labels to understand the threat type and attack stage. "
-                "Response includes: found (boolean), threat_score (0-100), classification (malicious/suspicious/benign), labels (array of threat types), indicators (array with scores and patterns). "
-                "If found=false and no indicators, the hash is likely benign/unknown. If found=true with indicators, analyze the threat_score and labels to determine severity."
-            ),
-            "inputSchema": {
-                "type": "object",
-                "properties": {
-                    "hash_value": {
-                        "type": "string",
-                        "description": "The hash value to look up (MD5, SHA1, SHA256, SHA512). Use this to check if a file hash is known malicious.",
-                    }
+            self.tools["lookup_hash_ti"] = {
+                "name": "lookup_hash_ti",
+                "description": (
+                    "Look up a file hash (MD5, SHA1, SHA256, SHA512) in threat intelligence platforms to determine if it's malicious, suspicious, or benign. "
+                    "Returns threat scores, classifications, indicators, labels, and MITRE ATT&CK kill chain phases. "
+                    "Use this to: (1) Check if a hash is known malicious - look for 'classification: malicious', high threat_score (>70), or labels like 'malware', 'trojan', 'ransomware'. "
+                    "(2) Assess threat level - threat_score 0-30=benign, 31-60=suspicious, 61-100=malicious. "
+                    "(3) Understand attack context - review kill_chain_phases and labels to understand the threat type and attack stage. "
+                    "Response includes: found (boolean), threat_score (0-100), classification (malicious/suspicious/benign), labels (array of threat types), indicators (array with scores and patterns). "
+                    "If found=false and no indicators, the hash is likely benign/unknown. If found=true with indicators, analyze the threat_score and labels to determine severity."
+                ),
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "hash_value": {
+                            "type": "string",
+                            "description": "The hash value to look up (MD5, SHA1, SHA256, SHA512). Use this to check if a file hash is known malicious.",
+                        }
+                    },
+                    "required": ["hash_value"],
                 },
-                "required": ["hash_value"],
-            },
-        }
+            }
+        else:
+            self._mcp_logger.warning(
+                "lookup_hash_ti not registered: No CTI client configured. "
+                "Configure CTI platform in config.json to enable it."
+            )
+
+        if self.misp_client:
+            self._mcp_logger.info("Registering 1 CTI tool (lookup_ioc_misp)")
+
+            self.tools["lookup_ioc_misp"] = {
+                "name": "lookup_ioc_misp",
+                "description": (
+                    "Look up an IP address or file hash (MD5, SHA1, SHA256, SHA512) in MISP (Malware Information Sharing Platform) "
+                    "to retrieve associated tags and threat events. "
+                    "Response includes: found (boolean), indicator_type (ip/hash), tags (array of MISP tags), "
+                    "events (array of matching MISP events with event_id, info, threat_level_id, and tags). "
+                    "If found=false, the indicator has no matching attributes in MISP."
+                ),
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "indicator": {
+                            "type": "string",
+                            "description": "The IP address or file hash (MD5, SHA1, SHA256, SHA512) to look up in MISP.",
+                        }
+                    },
+                    "required": ["indicator"],
+                },
+            }
+        else:
+            self._mcp_logger.warning(
+                "lookup_ioc_misp not registered: No MISP client configured. "
+                "Configure 'misp' in config.json to enable it."
+            )
 
     def _register_rules_tools(self) -> None:
         """
@@ -3317,6 +3351,13 @@ To be populated during investigation.
             )
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
             return result
+        elif tool_name == "lookup_ioc_misp" and self.misp_client:
+            result = tools_cti.lookup_ioc_misp(
+                indicator=args["indicator"],
+                client=self.misp_client,
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
 
         # Rules engine tools
         elif tool_name == "list_rules":
@@ -3818,6 +3859,19 @@ async def main() -> None:
     if len(cti_clients) > 1:
         mcp_logger.info(f"✓ Multiple CTI platforms configured: {len(cti_clients)} platforms will be queried concurrently")
 
+    # Initialize MISP client (independent of the cti_client/cti_clients merge logic above)
+    misp_client = None
+    if config.misp:
+        try:
+            mcp_logger.info("Attempting to initialize MISP client...")
+            misp_client = MISPClient.from_config(config)
+            logger.info("MISP client initialized")
+            mcp_logger.info("✓ MISP client initialized successfully")
+            mcp_logger.info(f"    MISP URL: {config.misp.base_url}")
+        except Exception as e:
+            logger.error(f"Failed to initialize MISP client: {e}")
+            mcp_logger.error(f"✗ Failed to initialize MISP client: {e}", exc_info=True)
+
     # Initialize Engineering client (Trello, ClickUp, or GitHub)
     eng_client = None
     if config.eng:
@@ -3869,6 +3923,7 @@ async def main() -> None:
         edr_client=edr_client,
         cti_client=cti_client,  # For backward compatibility
         cti_clients=cti_clients if len(cti_clients) > 0 else None,  # Pass list of clients
+        misp_client=misp_client,
         eng_client=eng_client,
     )
 
@@ -3882,6 +3937,7 @@ async def main() -> None:
     mcp_logger.info(f"  SIEM: {'✓ Configured' if siem_client else '✗ Not configured (16 tools unavailable)'}")
     mcp_logger.info(f"  EDR: {'✓ Configured' if edr_client else '✗ Not configured (6 tools unavailable)'}")
     mcp_logger.info(f"  CTI: {'✓ Configured' if cti_client else '✗ Not configured (1 tool unavailable)'}")
+    mcp_logger.info(f"  MISP: {'✓ Configured' if misp_client else '✗ Not configured (1 tool unavailable)'}")
     eng_provider = "None"
     if eng_client:
         if isinstance(eng_client, GitHubClient):

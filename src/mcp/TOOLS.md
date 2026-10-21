@@ -1802,8 +1802,9 @@ The CTI integration supports multiple threat intelligence platforms:
 
 - **Local TIP** (`local_tip`): A local threat intelligence platform for hash lookups
 - **OpenCTI** (`opencti`): Open Cyber Threat Intelligence Platform with comprehensive threat intelligence data
+- **MISP**: Malware Information Sharing Platform for IP/hash indicator lookups (tags and event context)
 
-The same tools work with both platforms - the platform is selected via configuration in `config.json`.
+`lookup_hash_ti` works with Local TIP and OpenCTI (platform selected via `config.json`'s `cti.cti_type`). `lookup_ioc_misp` is a separate, independent tool backed by MISP, configured via `config.json`'s `misp` section.
 
 ### CTI Capabilities
 
@@ -1818,6 +1819,10 @@ The following capabilities are available through the CTI integration:
      - Analysis results from multiple sources
      - Related indicators and context
      - Historical threat intelligence data
+
+2. **MISP Indicator Lookup** (`lookup_ioc_misp`) - Look up an IP address or file hash in MISP to get associated tags and threat events
+   - Supports IP addresses and file hashes (MD5, SHA1, SHA256, SHA512)
+   - Returns MISP tags and matching events (with event ID, info, and threat level)
 
 ### `lookup_hash_ti`
 
@@ -1956,6 +1961,84 @@ The CTI platform is configured in `config.json`:
 - For OpenCTI: Set `cti_type` to `"opencti"`, provide `base_url` and `api_key`
 
 **Note:** This is the same tool for both platforms - no conflicts exist. The tool automatically uses the configured CTI platform backend.
+
+---
+
+### `lookup_ioc_misp`
+
+Look up an IP address or file hash in MISP (Malware Information Sharing Platform) to retrieve associated tags and threat events. This is a separate tool from `lookup_hash_ti` - it is backed by its own MISP client and is available whenever `misp` is configured in `config.json`, independent of whether `cti` (Local TIP/OpenCTI) is configured.
+
+**Parameters:**
+- `indicator` (string, required): The IP address or file hash (MD5, SHA1, SHA256, SHA512) to look up
+
+**Returns:**
+- `success` (boolean): Whether the operation succeeded
+- `indicator` (string): The indicator that was looked up
+- `threat_intelligence` (object): MISP lookup result containing:
+  - `indicator` (string): The indicator value
+  - `indicator_type` (string): Detected type - `"ip"`, `"hash"`, or `"unknown"`
+  - `found` (boolean): Whether any matching attributes were found in MISP
+  - `tags` (array): Unique MISP tags across all matching attributes
+  - `events` (array): Matching MISP events, each containing:
+    - `event_id` (string): MISP event ID
+    - `info` (string): Event description
+    - `threat_level_id` (string): MISP threat level
+    - `tags` (array): Tags on the matching attribute for this event
+
+**Example Response (Found):**
+```json
+{
+  "success": true,
+  "indicator": "8.8.8.8",
+  "threat_intelligence": {
+    "indicator": "8.8.8.8",
+    "indicator_type": "ip",
+    "found": true,
+    "tags": ["tlp:white", "osint"],
+    "events": [
+      {
+        "event_id": "1234",
+        "info": "Known scanning infrastructure",
+        "threat_level_id": "3",
+        "tags": ["tlp:white"]
+      }
+    ]
+  }
+}
+```
+
+**Example Response (Not Found):**
+```json
+{
+  "success": true,
+  "indicator": "a1b2c3d4e5f6789012345678901234567890abcd",
+  "threat_intelligence": {
+    "indicator": "a1b2c3d4e5f6789012345678901234567890abcd",
+    "indicator_type": "hash",
+    "found": false,
+    "tags": [],
+    "events": []
+  }
+}
+```
+
+**Usage Example:**
+```json
+{
+  "name": "lookup_ioc_misp",
+  "arguments": {
+    "indicator": "8.8.8.8"
+  }
+}
+```
+
+**Use Cases:**
+- Check IP or hash reputation against MISP threat sharing communities
+- Enrich an investigation with MISP tags (TLP, threat actor, campaign)
+- Correlate an indicator with known MISP events
+
+**Platform Configuration:**
+Set the `misp` section in `config.json` with `base_url` and `api_key` to enable this tool.
 
 ---
 
@@ -2485,8 +2568,9 @@ Tools are only available if the corresponding integration is configured:
 
 - **Case Management Tools**: Available when TheHive or IRIS is configured
 - **SIEM Tools**: Available when Elastic or other SIEM is configured
-- **CTI Tools**: Available when CTI platform is configured (supports Local TIP or OpenCTI)
+- **CTI Tools**: Available when CTI platform is configured (supports Local TIP, OpenCTI, or MISP)
   - `lookup_hash_ti`: Available when any CTI platform (local_tip or opencti) is configured
+  - `lookup_ioc_misp`: Available when `misp` is configured (independent of `lookup_hash_ti`)
 - **EDR Tools**: Available when EDR platform is configured
 - **Engineering Tools**: Available when engineering platform is configured (supports ClickUp, Trello, or GitHub)
   - Currently, `list_fine_tuning_recommendations`, `list_visibility_recommendations`, `add_comment_to_fine_tuning_recommendation`, and `add_comment_to_visibility_recommendation` only support ClickUp

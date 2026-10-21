@@ -75,6 +75,43 @@ def lookup_hash_ti(
     return _lookup_hash_ti_multi(hash_value, cti_clients)
 
 
+def lookup_ioc_misp(
+    indicator: str,
+    client=None,  # type: ignore
+) -> Dict[str, Any]:
+    """
+    Look up an indicator (IP address or file hash) in MISP.
+
+    Tool schema:
+    - name: lookup_ioc_misp
+    - description: Look up an IP address or file hash in MISP to get associated tags and threat events
+    - parameters:
+      - indicator (str, required): The IP address or hash value to look up
+
+    Args:
+        indicator: The IP address or hash value to look up.
+        client: MISP client.
+
+    Returns:
+        Dictionary containing MISP threat intelligence information.
+
+    Raises:
+        IntegrationError: If no client is provided or the lookup fails.
+    """
+    if client is None:
+        raise IntegrationError("No MISP client provided")
+
+    try:
+        result = client.lookup_indicator(indicator)
+        return {
+            "success": True,
+            "indicator": indicator,
+            "threat_intelligence": result,
+        }
+    except Exception as e:
+        raise IntegrationError(f"Failed to lookup indicator in MISP: {str(e)}") from e
+
+
 def _get_client_type(client) -> str:
     """Get the type name of a CTI client."""
     client_class_name = client.__class__.__name__
