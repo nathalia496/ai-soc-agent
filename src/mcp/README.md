@@ -65,6 +65,11 @@ a human analyst directly in the EDR platform.
 - `get_detection_details` - Detection analysis
 - `collect_forensic_artifacts` - Evidence collection (read-only from the agent's perspective)
 
+### CTI Tools (2 tools)
+Tools for enriching investigations with threat intelligence:
+- `lookup_hash_ti` - Look up a file hash in Local TIP or OpenCTI (whichever is configured)
+- `lookup_ioc_misp` - Look up an IP address or file hash in MISP for associated tags and events
+
 ### Rules Engine Tools (2 tools)
 Tools for automated workflows:
 - `list_rules` - List available workflows
@@ -143,6 +148,7 @@ Tools are conditionally available based on configured integrations:
 - **Case Management Tools**: Require TheHive or IRIS configuration
 - **SIEM Tools**: Require Elastic or other SIEM configuration
 - **EDR Tools**: Require EDR platform configuration
+- **CTI Tools**: `lookup_hash_ti` requires `cti` (Local TIP or OpenCTI) configuration; `lookup_ioc_misp` requires `misp` configuration independently
 - **Rules Engine Tools**: Always available
 
 Use `list_rules` to discover available automated workflows.
