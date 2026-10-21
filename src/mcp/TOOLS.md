@@ -18,6 +18,7 @@ This ensures clear distinction between case management operations and SIEM alert
 - [CTI Tools](#cti-tools)
 - [EDR Tools](#edr-tools)
 - [Engineering Tools](#engineering-tools)
+- [LLM Tools](#llm-tools)
 - [Rules Engine Tools](#rules-engine-tools)
 
 ---
@@ -2428,6 +2429,75 @@ Add a comment to an existing visibility/engineering recommendation task. This is
 
 ---
 
+## LLM Tools
+
+LLM tools generate investigation recommendations using a local model. These tools are strictly
+advisory and human-in-the-loop by design: they never execute, block, remediate, or otherwise take
+action - they only produce a report for a human analyst to review.
+
+### `generate_investigation_report`
+
+Generate a structured investigation report (timeline, observables, hypothesis, next_steps) from
+free-text investigation context (alert details, logs, CTI findings, etc.) using a local Ollama
+model. The output is a recommendation only.
+
+**Parameters:**
+- `context` (string, required): Free-text investigation context to analyze - e.g. alert details, logs, or CTI findings
+
+**Returns:**
+- `success` (boolean): Whether the operation succeeded
+- `report` (object): Generated report containing:
+  - `timeline` (array): Objects with `timestamp` and `description`, describing relevant events in chronological order
+  - `observables` (array): Objects with `type` (e.g. `"ip"`, `"hash"`, `"domain"`, `"user"`) and `value`, listing indicators relevant to the investigation
+  - `hypothesis` (string): The most likely explanation for what occurred, based on the available evidence
+  - `next_steps` (array of strings): Concrete, actionable recommendations for the human analyst - these are recommendations only, never actions already taken
+
+**Example Response:**
+```json
+{
+  "success": true,
+  "report": {
+    "timeline": [
+      {"timestamp": "2024-01-15T10:00:00Z", "description": "Suspicious PowerShell execution detected on HOST-01"}
+    ],
+    "observables": [
+      {"type": "hash", "value": "a1b2c3d4e5f6789012345678901234567890abcd"},
+      {"type": "ip", "value": "203.0.113.45"}
+    ],
+    "hypothesis": "The evidence suggests a possible living-off-the-land technique using PowerShell to download and execute a payload from an external IP.",
+    "next_steps": [
+      "Confirm whether the PowerShell command line matches known malicious patterns",
+      "Check the destination IP against threat intelligence sources",
+      "Review endpoint process tree for child processes spawned after execution"
+    ]
+  }
+}
+```
+
+**Usage Example:**
+```json
+{
+  "name": "generate_investigation_report",
+  "arguments": {
+    "context": "Alert: Suspicious PowerShell execution on HOST-01 at 2024-01-15T10:00:00Z. Command line: powershell.exe -enc <base64>. Process reached out to 203.0.113.45. CTI lookup on dropped file hash a1b2c3d4e5f6789012345678901234567890abcd returned no matches."
+  }
+}
+```
+
+**Use Cases:**
+- Summarize a large volume of alert/log/CTI data into a concise timeline and hypothesis
+- Get a starting set of next steps to guide manual investigation
+- Draft the skeleton of an investigation report before human review and refinement
+
+**Important:** The `next_steps` returned by this tool are recommendations only. No action described
+in the report has been taken; a human analyst must review and decide whether and how to act on them.
+
+**Platform Configuration:**
+Set the `ollama` section in `config.json` with `base_url` and `model` to enable this tool. The
+target model must be pulled in the local Ollama instance (e.g. `ollama pull llama3.1`).
+
+---
+
 ## Rules Engine Tools
 
 Rules engine tools enable execution of automated investigation workflows that chain together multiple skills.
@@ -2574,6 +2644,7 @@ Tools are only available if the corresponding integration is configured:
 - **EDR Tools**: Available when EDR platform is configured
 - **Engineering Tools**: Available when engineering platform is configured (supports ClickUp, Trello, or GitHub)
   - Currently, `list_fine_tuning_recommendations`, `list_visibility_recommendations`, `add_comment_to_fine_tuning_recommendation`, and `add_comment_to_visibility_recommendation` only support ClickUp
+- **LLM Tools**: `generate_investigation_report` requires `ollama` configuration
 - **Rules Engine Tools**: Always available
 
 ---
