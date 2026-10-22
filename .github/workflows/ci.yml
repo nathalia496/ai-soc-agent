@@ -49,3 +49,26 @@ jobs:
 
       - name: Run test suite
         run: pytest tests/ -v
+
+  lint:
+    name: Lint (ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install ruff
+        run: pip install -r requirements-dev.txt
+
+      - name: Run ruff
+        # Rule selection and the (small, documented) set of ignored rules and
+        # per-line `# noqa` exceptions live in pyproject.toml.
+        run: ruff check src/ tests/

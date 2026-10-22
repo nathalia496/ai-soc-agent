@@ -1,0 +1,24 @@
+[tool.ruff]
+line-length = 120
+extend-exclude = ["venv", "data"]
+
+[tool.ruff.lint]
+# Deliberately conservative: pycodestyle errors (E), pyflakes (F - unused
+# imports/variables, undefined names), and import sorting (I). Not pyupgrade,
+# bugbear, bandit, etc. - those surface thousands of mostly-stylistic findings
+# on a codebase this size and would make the check noise instead of signal.
+# Expand this selection gradually, rule by rule, rather than all at once.
+select = ["E", "F", "I"]
+ignore = [
+    # line-too-long: most of the codebase doesn't follow an 88/120-char
+    # convention today (hundreds of pre-existing long lines). Revisit if/when
+    # the project adopts an auto-formatter (e.g. `ruff format`), which would
+    # fix these mechanically instead of requiring manual line breaks.
+    "E501",
+    # module-import-not-at-top-of-file: deliberately triggered by two
+    # legitimate patterns in this codebase, not a bug - (1) standalone test/
+    # check scripts that insert the project root onto sys.path before
+    # importing `src.*`, and (2) src/mcp/mcp_server.py filtering urllib3
+    # warnings before importing anything that might trigger them.
+    "E402",
+]
