@@ -4,7 +4,7 @@ IRIS implementation of the generic ``CaseManagementClient`` interface.
 
 from __future__ import annotations
 
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 from ....api.case_management import (
     Case,
@@ -22,7 +22,6 @@ from ....core.logging import get_logger
 from .iris_http import IrisHttpClient
 from .iris_mapper import (
     case_to_iris_payload,
-    comment_to_iris_payload,
     iris_case_to_generic,
     iris_case_to_summary,
     iris_comment_to_generic,
@@ -30,7 +29,6 @@ from .iris_mapper import (
     observable_to_iris_payload,
     status_to_iris_status_id,
 )
-
 
 logger = get_logger("sami.integrations.iris.client")
 
@@ -355,7 +353,7 @@ class IRISCaseManagementClient(CaseManagementClient):
         as documented in IRIS API reference v2.0.2
         (Case timeline → Add a new event).
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         cid_int = int(case_id) if isinstance(case_id, str) and case_id.isdigit() else case_id
 
@@ -790,8 +788,8 @@ class IRISCaseManagementClient(CaseManagementClient):
         type names (or a valid numeric type_id as a string). If it does not,
         an IntegrationError is raised listing the allowed types.
         """
-        import os
         import hashlib
+        import os
         
         # Get filename and file size from file_path
         filename = os.path.basename(file_path)
@@ -876,7 +874,7 @@ class IRISCaseManagementClient(CaseManagementClient):
         """
         try:
             # IRIS has a dedicated ping endpoint
-            response = self._http.get("/api/ping")
+            response = self._http.get("/api/ping")  # noqa: F841
             # Ping returns {"status": "success", "message": "pong", "data": []}
             return True
         except IntegrationError:

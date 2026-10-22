@@ -3,9 +3,8 @@ Extract list IDs and space IDs from ClickUp board view URLs.
 """
 
 import os
-import sys
 import re
-import json
+import sys
 
 # Add project root to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
@@ -40,7 +39,7 @@ def get_view_details(http_client, view_id):
         try:
             response = http_client.get(endpoint)
             return response
-        except Exception as e:
+        except Exception:
             continue
     
     return None
@@ -78,7 +77,7 @@ def get_list_from_view(http_client, view_id, workspace_id):
                 "url": list_response.get("url"),
             }
             space_id = list_response.get("space_id") or list_response.get("space", {}).get("id")
-        except:
+        except:  # noqa: E722
             # Try extracting numeric part if view_id has format like "4-90188208260-2"
             # The middle part might be the list ID
             parts = view_id.split("-")
@@ -94,7 +93,7 @@ def get_list_from_view(http_client, view_id, workspace_id):
                         }
                         space_id = list_response.get("space_id") or list_response.get("space", {}).get("id")
                         break
-                    except:
+                    except:  # noqa: E722
                         continue
     
     # If we have folder_id, we can get space from folder
@@ -102,7 +101,7 @@ def get_list_from_view(http_client, view_id, workspace_id):
         try:
             folder_response = http_client.get(f"/v2/folder/{folder_id}")
             space_id = folder_response.get("space_id") or folder_response.get("space", {}).get("id")
-        except:
+        except:  # noqa: E722
             pass
     
     # If we have list_id but no list_info, get list details

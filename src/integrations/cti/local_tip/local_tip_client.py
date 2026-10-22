@@ -6,13 +6,12 @@ This client provides hash lookup capabilities via the local TIP API.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .local_tip_http import LocalTipHttpClient
-
 
 logger = get_logger("sami.integrations.cti.local_tip.client")
 

@@ -6,13 +6,12 @@ This client provides hash lookup capabilities via the OpenCTI GraphQL API.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .opencti_http import OpenCTIHttpClient
-
 
 logger = get_logger("sami.integrations.cti.opencti.client")
 

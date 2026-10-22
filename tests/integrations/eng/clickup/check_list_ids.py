@@ -25,7 +25,7 @@ def test_list_id(http_client, list_id, list_name):
     print(f"  List ID: {list_id}")
     try:
         response = http_client.get(f"/v2/list/{list_id}")
-        print(f"  ✓ Valid list ID!")
+        print("  ✓ Valid list ID!")
         print(f"    List Name: {response.get('name', 'Unknown')}")
         print(f"    Space ID: {response.get('space_id', response.get('space', {}).get('id', 'Not found'))}")
         return {

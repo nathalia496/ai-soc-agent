@@ -30,7 +30,6 @@ from .thehive_mapper import (
     thehive_comment_to_generic,
 )
 
-
 logger = get_logger("sami.integrations.thehive.client")
 
 

@@ -20,9 +20,9 @@ from datetime import datetime
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
 sys.path.insert(0, project_root)
 
+from src.api.case_management import Case, CaseObservable, CasePriority, CaseStatus
 from src.core.config_storage import load_config_from_file
 from src.integrations.case_management.iris.iris_client import IRISCaseManagementClient
-from src.api.case_management import Case, CaseStatus, CasePriority, CaseObservable
 
 
 def main():
@@ -66,7 +66,7 @@ def main():
         
         created_case = client.create_case(test_case)
         case_id = created_case.id
-        print(f"✓ Case created successfully")
+        print("✓ Case created successfully")
         print(f"  Case ID: {case_id}")
         print(f"  Title: {created_case.title}")
         print(f"  Status: {created_case.status}")
@@ -88,7 +88,7 @@ def main():
             content="This is a test comment added to the case",
             author="test-automation",
         )
-        print(f"✓ Comment added successfully")
+        print("✓ Comment added successfully")
         print(f"  Comment ID: {comment.id}")
         print(f"  Content: {comment.content[:50]}...")
         print(f"  Author: {comment.author}")
@@ -107,7 +107,7 @@ def main():
             content="First note: Initial investigation started",
             author="analyst-1",
         )
-        print(f"✓ Note 1 added successfully")
+        print("✓ Note 1 added successfully")
         print(f"  Note ID: {note1.id}")
         
         note2 = client.add_case_comment(
@@ -115,7 +115,7 @@ def main():
             content="Second note: Reviewing evidence and logs",
             author="analyst-2",
         )
-        print(f"✓ Note 2 added successfully")
+        print("✓ Note 2 added successfully")
         print(f"  Note ID: {note2.id}")
     except Exception as e:
         print(f"⚠ Notes endpoint not available (may be API version issue): {e}")
@@ -134,7 +134,7 @@ def main():
             ip_address="192.168.1.100",
             tags=["compromised", "investigation"],
         )
-        print(f"✓ Asset 1 added successfully")
+        print("✓ Asset 1 added successfully")
         print(f"  Asset ID: {asset1.get('asset_id', 'N/A')}")
         print(f"  Asset Name: {asset1.get('asset_name', 'N/A')}")
         
@@ -146,7 +146,7 @@ def main():
             ip_address="10.0.0.50",
             tags=["production"],
         )
-        print(f"✓ Asset 2 added successfully")
+        print("✓ Asset 2 added successfully")
         print(f"  Asset ID: {asset2.get('asset_id', 'N/A')}")
         print(f"  Asset Name: {asset2.get('asset_name', 'N/A')}")
     except Exception as e:
@@ -166,7 +166,7 @@ def main():
             tags=["malicious", "c2"],
         )
         ioc1 = client.add_case_observable(case_id=case_id, observable=observable1)
-        print(f"✓ IOC 1 (IP) added successfully")
+        print("✓ IOC 1 (IP) added successfully")
         print(f"  Type: {ioc1.type}")
         print(f"  Value: {ioc1.value}")
         
@@ -177,7 +177,7 @@ def main():
             tags=["c2", "phishing"],
         )
         ioc2 = client.add_case_observable(case_id=case_id, observable=observable2)
-        print(f"✓ IOC 2 (Domain) added successfully")
+        print("✓ IOC 2 (Domain) added successfully")
         print(f"  Type: {ioc2.type}")
         print(f"  Value: {ioc2.value}")
         
@@ -188,7 +188,7 @@ def main():
             tags=["malware"],
         )
         ioc3 = client.add_case_observable(case_id=case_id, observable=observable3)
-        print(f"✓ IOC 3 (Hash) added successfully")
+        print("✓ IOC 3 (Hash) added successfully")
         print(f"  Type: {ioc3.type}")
         print(f"  Value: {ioc3.value[:50]}...")
     except Exception as e:
@@ -214,7 +214,7 @@ def main():
         )
         # IRIS returns task data directly (not wrapped in 'data' field)
         task1_id = task1.get('id') or task1.get('task_id')
-        print(f"✓ Task 1 added successfully")
+        print("✓ Task 1 added successfully")
         print(f"  Task ID: {task1_id}")
         print(f"  Title: {task1.get('task_title', 'N/A')}")
         print(f"  Status: {task1.get('task_status_id', 'N/A')}")
@@ -227,7 +227,7 @@ def main():
             status="pending",
         )
         task2_id = task2.get('id') or task2.get('task_id')
-        print(f"✓ Task 2 added successfully")
+        print("✓ Task 2 added successfully")
         print(f"  Task ID: {task2_id}")
         print(f"  Title: {task2.get('task_title', 'N/A')}")
         print(f"  Status: {task2.get('task_status_id', 'N/A')}")
@@ -240,7 +240,7 @@ def main():
             status="in_progress",
         )
         task3_id = task3.get('id') or task3.get('task_id')
-        print(f"✓ Task 3 added successfully")
+        print("✓ Task 3 added successfully")
         print(f"  Task ID: {task3_id}")
         print(f"  Title: {task3.get('task_title', 'N/A')}")
         print(f"  Status: {task3.get('task_status_id', 'N/A')}")
@@ -264,7 +264,7 @@ def main():
                 task_id=str(task1_id),
                 status="in_progress",
             )
-            print(f"✓ Task status updated successfully")
+            print("✓ Task status updated successfully")
             print(f"  Task ID: {updated_task1.get('data', {}).get('id', task1_id)}")
             print(f"  Status ID: {updated_task1.get('data', {}).get('task_status_id', 'N/A')}")
             print(f"  Message: {updated_task1.get('message', 'N/A')}")
@@ -276,7 +276,7 @@ def main():
                 task_id=str(task1_id),
                 status="completed",
             )
-            print(f"✓ Task status updated successfully")
+            print("✓ Task status updated successfully")
             print(f"  Task ID: {completed_task1.get('data', {}).get('id', task1_id)}")
             print(f"  Status ID: {completed_task1.get('data', {}).get('task_status_id', 'N/A')}")
             print(f"  Message: {completed_task1.get('message', 'N/A')}")
@@ -289,13 +289,13 @@ def main():
                     task_id=str(task2_id),
                     status="in_progress",
                 )
-                print(f"✓ Task status updated successfully")
+                print("✓ Task status updated successfully")
                 print(f"  Task ID: {updated_task2.get('data', {}).get('id', task2_id)}")
                 print(f"  Status ID: {updated_task2.get('data', {}).get('task_status_id', 'N/A')}")
                 print(f"  Message: {updated_task2.get('message', 'N/A')}")
             
             # List all tasks to verify status changes
-            print(f"\nListing all tasks to verify status changes...")
+            print("\nListing all tasks to verify status changes...")
             all_tasks = client.list_case_tasks(case_id)
             print(f"✓ Found {len(all_tasks)} tasks")
             for task in all_tasks:
@@ -315,7 +315,7 @@ def main():
     print("Test 7: Add timeline events")
     print("=" * 70)
     try:
-        event1 = client.add_case_timeline_event(
+        event1 = client.add_case_timeline_event(  # noqa: F841
             case_id=case_id,
             title="Case created",
             content="Case created and initial triage started.",
@@ -323,7 +323,7 @@ def main():
         )
         print("✓ Timeline event 1 added")
         
-        event2 = client.add_case_timeline_event(
+        event2 = client.add_case_timeline_event(  # noqa: F841
             case_id=case_id,
             title="IOC analysis completed",
             content="IOC triage completed and indicators reviewed.",
@@ -331,7 +331,7 @@ def main():
         )
         print("✓ Timeline event 2 added")
         
-        event3 = client.add_case_timeline_event(
+        event3 = client.add_case_timeline_event(  # noqa: F841
             case_id=case_id,
             title="Containment actions",
             content="Containment actions executed on affected assets.",

@@ -81,7 +81,7 @@ def main():
             title="Test Fine-Tuning Recommendation",
             description="This is a test recommendation for fine-tuning improvements."
         )
-        print(f"✓ Fine-tuning recommendation project item created successfully")
+        print("✓ Fine-tuning recommendation project item created successfully")
         print(f"  Item ID: {item.get('id')}")
         print(f"  Item URL: {item.get('url')}")
     except Exception as e:
@@ -98,7 +98,7 @@ def main():
             title="Test Visibility Recommendation",
             description="This is a test recommendation for visibility improvements."
         )
-        print(f"✓ Visibility recommendation project item created successfully")
+        print("✓ Visibility recommendation project item created successfully")
         print(f"  Item ID: {item.get('id')}")
         print(f"  Item URL: {item.get('url')}")
     except Exception as e:

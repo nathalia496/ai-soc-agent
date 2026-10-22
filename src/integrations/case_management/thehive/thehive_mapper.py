@@ -4,11 +4,10 @@ Mapping logic between generic case management DTOs and TheHive models/payloads.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from ....api.case_management import (
     Case,
-    CaseAssignment,
     CaseComment,
     CaseObservable,
     CasePriority,
@@ -22,7 +21,6 @@ from .thehive_models import (
     parse_thehive_case,
     parse_thehive_observable,
 )
-
 
 # Generic → TheHive
 

@@ -4,8 +4,8 @@ Test script for all SIEM tools.
 Tests each SIEM capability to ensure they work correctly.
 """
 
-import sys
 import json
+import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -15,39 +15,38 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.core.config import SamiConfig
 from src.core.config_storage import load_config_from_file
 from src.integrations.siem.elastic.elastic_client import ElasticSIEMClient
 from src.orchestrator.tools_siem import (
-    search_security_events,
-    get_file_report,
-    get_file_behavior_summary,
-    get_entities_related_to_file,
-    get_ip_address_report,
-    search_user_activity,
-    pivot_on_indicator,
-    search_kql_query,
-    get_recent_alerts,
-    get_security_alerts,
-    get_security_alert_by_id,
-    get_siem_event_by_id,
-    lookup_entity,
-    get_ioc_matches,
-    get_threat_intel,
-    list_security_rules,
-    search_security_rules,
-    get_rule_detections,
-    list_rule_errors,
-    get_network_events,
-    get_dns_events,
+    add_alert_note,
     get_alerts_by_entity,
     get_alerts_by_time_window,
     get_all_uncertain_alerts_for_host,
+    get_dns_events,
     get_email_events,
-    close_alert,
+    get_entities_related_to_file,
+    get_file_behavior_summary,
+    get_file_report,
+    get_ioc_matches,
+    get_ip_address_report,
+    get_network_events,
+    get_recent_alerts,
+    get_rule_detections,
+    get_security_alert_by_id,
+    get_security_alerts,
+    get_siem_event_by_id,
+    get_threat_intel,
+    list_rule_errors,
+    list_security_rules,
+    lookup_entity,
+    pivot_on_indicator,
+    search_kql_query,
+    search_security_events,
+    search_security_rules,
+    search_user_activity,
     tag_alert,
-    add_alert_note,
 )
+
 
 def run_tool_test(tool_name: str, func, *args, **kwargs):
     """Helper to exercise a single tool and print results."""
@@ -56,7 +55,7 @@ def run_tool_test(tool_name: str, func, *args, **kwargs):
     print(f"{'='*80}")
     try:
         result = func(*args, **kwargs)
-        print(f"✓ SUCCESS")
+        print("✓ SUCCESS")
         print(f"Result type: {type(result)}")
         if isinstance(result, dict):
             print(f"Result keys: {list(result.keys())}")
@@ -220,7 +219,7 @@ def main():
     if test_alert_id:
         # Test get_security_alert_by_id and verify events field is present
         print(f"\n{'='*80}")
-        print(f"Testing: get_security_alert_by_id (with events field verification)")
+        print("Testing: get_security_alert_by_id (with events field verification)")
         print(f"{'='*80}")
         try:
             result = get_security_alert_by_id(
@@ -228,25 +227,25 @@ def main():
                 include_detections=True,
                 client=siem_client
             )
-            print(f"✓ SUCCESS")
+            print("✓ SUCCESS")
             
             # Verify events field is present
             if result.get("success") and result.get("alert"):
                 alert = result["alert"]
                 if "events" in alert:
-                    print(f"✓ Events field is present")
+                    print("✓ Events field is present")
                     events_count = len(alert.get("events", []))
                     print(f"  Events count: {events_count}")
                     if events_count > 0:
                         print(f"  First event keys: {list(alert['events'][0].keys())}")
                         print(f"  Sample event: {json.dumps(alert['events'][0], indent=2, default=str)[:500]}...")
                     else:
-                        print(f"  (No ancestor events found - this is expected if alert has no ancestors)")
+                        print("  (No ancestor events found - this is expected if alert has no ancestors)")
                 else:
-                    print(f"✗ FAILED: Events field is missing from alert response")
+                    print("✗ FAILED: Events field is missing from alert response")
                     results["get_security_alert_by_id"] = False
             else:
-                print(f"✗ FAILED: Alert response structure is invalid")
+                print("✗ FAILED: Alert response structure is invalid")
                 results["get_security_alert_by_id"] = False
                 return
             
@@ -286,7 +285,7 @@ def main():
         
         # Test invalid tag
         print(f"\n{'='*80}")
-        print(f"Testing: tag_alert (invalid tag)")
+        print("Testing: tag_alert (invalid tag)")
         print(f"{'='*80}")
         try:
             result = tag_alert(
@@ -294,11 +293,11 @@ def main():
                 tag="INVALID",
                 client=siem_client
             )
-            print(f"✗ FAILED: Should have raised an error for invalid tag")
+            print("✗ FAILED: Should have raised an error for invalid tag")
             results["tag_alert_invalid"] = False
         except Exception as e:
             if "Invalid tag" in str(e) or "IntegrationError" in str(type(e)):
-                print(f"✓ SUCCESS: Correctly rejected invalid tag")
+                print("✓ SUCCESS: Correctly rejected invalid tag")
                 results["tag_alert_invalid"] = True
             else:
                 print(f"✗ FAILED: Unexpected error: {e}")
@@ -337,7 +336,7 @@ Recommendations for Detection Rule Improvement:
         )
     else:
         print(f"\n{'='*80}")
-        print(f"Testing: get_security_alert_by_id")
+        print("Testing: get_security_alert_by_id")
         print(f"{'='*80}")
         print("⚠ SKIPPED: No alerts found to test with. Tool implementation is correct.")
         print("  (This is expected if there are no alerts in the system)")
@@ -351,7 +350,7 @@ Recommendations for Detection Rule Improvement:
     
     # Test get_siem_event_by_id - first get an event ID from search
     print(f"\n{'='*80}")
-    print(f"Testing: get_siem_event_by_id")
+    print("Testing: get_siem_event_by_id")
     print(f"{'='*80}")
     test_event_id = None
     try:

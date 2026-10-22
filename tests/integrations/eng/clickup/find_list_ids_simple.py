@@ -159,7 +159,7 @@ def find_list_ids_simple():
             for lst in visibility_lists:
                 print(f"  ✓ {lst['name']}")
                 print(f"    ID: {lst['id']}")
-                print(f"    Use this ID for 'engineering_list_id'")
+                print("    Use this ID for 'engineering_list_id'")
         else:
             print("⚠ No lists found with 'Visibility' in the name")
         
@@ -168,7 +168,7 @@ def find_list_ids_simple():
             for lst in fine_tuning_lists:
                 print(f"  ✓ {lst['name']}")
                 print(f"    ID: {lst['id']}")
-                print(f"    Use this ID for 'fine_tuning_list_id'")
+                print("    Use this ID for 'fine_tuning_list_id'")
         else:
             print("\n⚠ No lists found with 'Fine-tuning' in the name")
         

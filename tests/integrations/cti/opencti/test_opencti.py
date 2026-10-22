@@ -7,7 +7,8 @@ Tests all Python functions in the OpenCTI integration to ensure they work correc
 
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
+
 import requests
 
 # Add project root to path
@@ -16,8 +17,8 @@ sys.path.insert(0, str(project_root))
 
 from src.core.config import CTIConfig, SamiConfig
 from src.core.errors import IntegrationError
-from src.integrations.cti.opencti.opencti_http import OpenCTIHttpClient
 from src.integrations.cti.opencti.opencti_client import OpenCTIClient
+from src.integrations.cti.opencti.opencti_http import OpenCTIHttpClient
 
 
 class TestOpenCTIHttpClient:

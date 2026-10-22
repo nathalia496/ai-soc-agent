@@ -72,7 +72,7 @@ def main():
             description="This is a test recommendation for fine-tuning improvements.",
             tags=["test", "recommendation"]
         )
-        print(f"✓ Fine-tuning recommendation task created successfully")
+        print("✓ Fine-tuning recommendation task created successfully")
         print(f"  Task ID: {task.get('id')}")
         print(f"  Task Name: {task.get('name')}")
         print(f"  Task URL: {task.get('url')}")
@@ -91,7 +91,7 @@ def main():
             description="This is a test recommendation for visibility improvements.",
             tags=["test", "recommendation"]
         )
-        print(f"✓ Visibility recommendation task created successfully")
+        print("✓ Visibility recommendation task created successfully")
         print(f"  Task ID: {task.get('id')}")
         print(f"  Task Name: {task.get('name')}")
         print(f"  Task URL: {task.get('url')}")
@@ -106,7 +106,7 @@ def main():
     print("-" * 70)
     try:
         tasks = client.list_fine_tuning_recommendations()
-        print(f"✓ Fine-tuning recommendations listed successfully")
+        print("✓ Fine-tuning recommendations listed successfully")
         print(f"  Found {len(tasks)} tasks")
         if tasks:
             print(f"  First task ID: {tasks[0].get('id')}")
@@ -122,7 +122,7 @@ def main():
     print("-" * 70)
     try:
         tasks = client.list_visibility_recommendations()
-        print(f"✓ Visibility recommendations listed successfully")
+        print("✓ Visibility recommendations listed successfully")
         print(f"  Found {len(tasks)} tasks")
         if tasks:
             print(f"  First task ID: {tasks[0].get('id')}")
@@ -147,7 +147,7 @@ def main():
                 task_id=task_id,
                 comment_text="Test comment added by test script"
             )
-            print(f"✓ Comment added to fine-tuning recommendation task successfully")
+            print("✓ Comment added to fine-tuning recommendation task successfully")
             print(f"  Task ID: {task_id}")
             print(f"  Comment ID: {comment.get('id')}")
     except Exception as e:
@@ -170,7 +170,7 @@ def main():
                 task_id=task_id,
                 comment_text="Test comment added by test script"
             )
-            print(f"✓ Comment added to visibility recommendation task successfully")
+            print("✓ Comment added to visibility recommendation task successfully")
             print(f"  Task ID: {task_id}")
             print(f"  Comment ID: {comment.get('id')}")
     except Exception as e:

@@ -15,7 +15,7 @@ for the human-in-the-loop containment workflow.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from ..api.edr import EDRClient
 from ..core.errors import IntegrationError

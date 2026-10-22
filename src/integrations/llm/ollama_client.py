@@ -17,7 +17,6 @@ from ...core.errors import IntegrationError, ValidationError
 from ...core.logging import get_logger
 from .ollama_http import OllamaHttpClient
 
-
 logger = get_logger("sami.integrations.llm.ollama.client")
 
 REQUIRED_REPORT_KEYS: List[str] = ["timeline", "observables", "hypothesis", "next_steps"]

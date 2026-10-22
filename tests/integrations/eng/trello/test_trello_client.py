@@ -82,7 +82,7 @@ def main():
             description="This is a test recommendation for fine-tuning improvements.",
             labels=["test", "recommendation"]
         )
-        print(f"✓ Fine-tuning recommendation card created successfully")
+        print("✓ Fine-tuning recommendation card created successfully")
         print(f"  Card ID: {card.get('id')}")
         print(f"  Card Name: {card.get('name')}")
         print(f"  Card URL: {card.get('url')}")
@@ -101,7 +101,7 @@ def main():
             description="This is a test recommendation for visibility improvements.",
             labels=["test", "recommendation"]
         )
-        print(f"✓ Visibility recommendation card created successfully")
+        print("✓ Visibility recommendation card created successfully")
         print(f"  Card ID: {card.get('id')}")
         print(f"  Card Name: {card.get('name')}")
         print(f"  Card URL: {card.get('url')}")

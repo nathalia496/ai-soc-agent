@@ -6,14 +6,12 @@ This module handles HTTP requests to the local TIP API for hash lookups.
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Optional
 
 import requests
 
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
-
 
 logger = get_logger("sami.integrations.cti.local_tip.http")
 

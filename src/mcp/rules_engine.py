@@ -232,7 +232,7 @@ class RulesEngine:
             evaluated = trigger
             for key, value in context.variables.items():
                 evaluated = evaluated.replace(f"${key}", str(value))
-                evaluated = evaluated.replace(f"{{key}}", str(value))
+                evaluated = evaluated.replace("{key}", str(value))
 
             # Simple evaluation (can be made more sophisticated)
             # For now, just check if it's a boolean expression

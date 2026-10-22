@@ -2,7 +2,6 @@
 Unit tests for TheHive mapper edge cases and mapping logic.
 """
 
-import pytest
 from datetime import datetime
 
 from src.api.case_management import (
@@ -11,7 +10,6 @@ from src.api.case_management import (
     CaseObservable,
     CasePriority,
     CaseStatus,
-    CaseSummary,
 )
 from src.integrations.case_management.thehive.thehive_mapper import (
     case_to_thehive_payload,

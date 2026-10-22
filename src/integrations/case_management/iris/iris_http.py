@@ -19,7 +19,6 @@ import requests
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 
-
 logger = get_logger("sami.integrations.iris.http")
 
 
@@ -218,7 +217,6 @@ class IrisHttpClient:
             Response JSON as dictionary
         """
         import os
-        from pathlib import Path
         
         url = self._build_url(endpoint)
         headers = {

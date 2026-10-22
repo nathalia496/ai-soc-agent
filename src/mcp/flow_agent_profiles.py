@@ -22,7 +22,7 @@ import os
 import re
 import subprocess
 from pathlib import Path
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 
 def get_project_root() -> Path:
