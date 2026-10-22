@@ -19,6 +19,7 @@ This ensures clear distinction between case management operations and SIEM alert
 - [EDR Tools](#edr-tools)
 - [Engineering Tools](#engineering-tools)
 - [LLM Tools](#llm-tools)
+- [Investigation Pipeline Tools](#investigation-pipeline-tools)
 - [Rules Engine Tools](#rules-engine-tools)
 
 ---
@@ -2495,6 +2496,68 @@ in the report has been taken; a human analyst must review and decide whether and
 **Platform Configuration:**
 Set the `ollama` section in `config.json` with `base_url` and `model` to enable this tool. The
 target model must be pulled in the local Ollama instance (e.g. `ollama pull llama3.1`).
+
+---
+
+## Investigation Pipeline Tools
+
+This tool chains the individual investigation stages above (SIEM alert + logs, CTI/MISP
+enrichment, MITRE ATT&CK technique mapping, LLM report generation) into a single "alert in,
+report out" call, reusing `get_security_alert_by_id`, `get_logs_for_alert`, `lookup_hash_ti`,
+`lookup_ioc_misp`, `map_to_attack`, and `generate_investigation_report` internally. It is
+strictly advisory and human-in-the-loop by design: it only ever reads data and, optionally,
+adds a comment to an existing case - it never isolates an endpoint, kills a process, or
+performs any other containment/remediation action.
+
+### `investigate_alert`
+
+Fetch a SIEM alert, fetch nearby logs, enrich any related hash/IP indicators via threat
+intelligence, map findings to likely MITRE ATT&CK techniques, and generate a structured
+investigation report - end to end, in one call. Enrichment stages that aren't configured
+(CTI, MISP, ATT&CK mapper) are skipped and recorded as warnings rather than failing the
+whole investigation; only a missing SIEM/LLM client, a non-existent alert, or a report-
+generation failure stop the pipeline outright.
+
+**Parameters:**
+- `alert_id` (string, required): The ID of the SIEM alert to investigate
+- `case_id` (string, optional): Case ID to attach the generated report to as a comment. The alert and the case are different ID spaces, so this must be given explicitly - it is not inferred from `alert_id`
+- `minutes_before` (integer, optional): Minutes before the alert's timestamp to include when searching nearby logs (default: 30)
+- `minutes_after` (integer, optional): Minutes after the alert's timestamp to include when searching nearby logs (default: 30)
+
+**Returns:**
+- `success` (boolean): Whether the pipeline completed
+- `alert_id` (string): The investigated alert's ID
+- `alert` (object): The raw alert, as returned by `get_security_alert_by_id`
+- `logs` (object): Nearby logs/evidence, as returned by `get_logs_for_alert`
+- `cti_results` (object): `hash_lookups` (results of `lookup_hash_ti` per hash entity) and `ioc_lookups` (results of `lookup_ioc_misp` per hash/IP entity)
+- `attack_matches` (array): Matched MITRE ATT&CK techniques, as returned by `map_to_attack`
+- `report` (object): The generated report (`timeline`/`observables`/`hypothesis`/`next_steps`), as returned by `generate_investigation_report`
+- `case_comment` (object or null): Result of `add_case_comment` if the report was attached to a case, otherwise `null`
+- `warnings` (array of strings): Non-fatal issues encountered along the way (e.g. an unconfigured integration, a failed enrichment lookup)
+
+**Usage Example:**
+```json
+{
+  "name": "investigate_alert",
+  "arguments": {
+    "alert_id": "verify-alert-0001",
+    "case_id": "case-123"
+  }
+}
+```
+
+**Use Cases:**
+- Run the entire SIEM alert -> logs -> CTI/ATT&CK enrichment -> LLM report flow in a single tool call instead of chaining each stage manually
+- Get a complete, auditable set of intermediate artifacts (logs, CTI findings, ATT&CK matches) alongside the final report, for review or for attaching to a case
+
+**Important:** Like `generate_investigation_report`, the report this tool produces is a
+recommendation only. No containment or remediation action is taken on its behalf; a human
+analyst must review the report and `next_steps` and decide whether and how to act on them.
+
+**Platform Configuration:**
+Requires `elastic` (SIEM) and `ollama` (LLM) to be configured - these are the only two hard
+dependencies. `cti`/`cti_opencti`, `misp`, and the ATT&CK mapper are all optional and enrich
+the investigation when available; `iris`/`thehive` is only needed if you pass `case_id`.
 
 ---
 
