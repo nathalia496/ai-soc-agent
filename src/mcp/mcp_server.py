@@ -43,7 +43,17 @@ from ..integrations.eng.trello.trello_client import TrelloClient
 from ..integrations.eng.clickup.clickup_client import ClickUpClient
 from ..integrations.eng.github.github_client import GitHubClient
 from ..integrations.attack.attack_mapper import AttackMapper
-from ..orchestrator import tools_case, tools_cti, tools_edr, tools_siem, tools_kb, tools_eng, tools_attack, tools_llm
+from ..orchestrator import (
+    tools_case,
+    tools_cti,
+    tools_edr,
+    tools_siem,
+    tools_kb,
+    tools_eng,
+    tools_attack,
+    tools_llm,
+    investigate_alert as investigate_alert_module,
+)
 from ..integrations.llm.ollama_client import OllamaClient
 from .rules_engine import RulesEngine
 from .agent_profiles import AgentProfileManager
@@ -224,6 +234,8 @@ class SamiGPTMCPServer:
         self._register_attack_tools()
         # LLM report-generation tools (Ollama)
         self._register_llm_tools()
+        # End-to-end alert investigation pipeline
+        self._register_investigation_tools()
 
     def _register_kb_tools(self) -> None:
         """
@@ -2029,6 +2041,72 @@ class SamiGPTMCPServer:
             },
         }
 
+    def _register_investigation_tools(self) -> None:
+        """
+        Register the end-to-end alert investigation pipeline tool.
+
+        Available tools:
+        - investigate_alert: Run alert -> nearby logs -> CTI/ATT&CK enrichment ->
+          LLM report generation in a single call.
+
+        Requires a SIEM client and an Ollama client at minimum; CTI (OpenCTI/local
+        TIP/MISP), ATT&CK mapping, and case-comment attachment are all best-effort
+        and degrade gracefully (recorded as warnings) if not configured.
+        """
+        if not (self.siem_client and self.ollama_client):
+            self._mcp_logger.warning(
+                "investigate_alert not registered: requires both a SIEM client and an "
+                "Ollama client configured."
+            )
+            return
+
+        self._mcp_logger.info("Registering 1 investigation pipeline tool (investigate_alert)")
+
+        self.tools["investigate_alert"] = {
+            "name": "investigate_alert",
+            "description": (
+                "Run the full investigation pipeline for a single SIEM alert in one call: fetches "
+                "the alert, fetches nearby logs/evidence, enriches any related hash/IP indicators "
+                "via threat intelligence (OpenCTI/local TIP/MISP, whichever are configured), maps "
+                "findings to likely MITRE ATT&CK techniques, and generates a structured investigation "
+                "report (timeline, observables, hypothesis, next_steps). This is a recommendation "
+                "only: it never isolates an endpoint, kills a process, or performs any other "
+                "containment/remediation action - those remain for a human analyst. "
+                "If case_id is given (and case management is configured), the report is also "
+                "attached to that case as a comment for human review. "
+                "Enrichment stages that aren't configured (CTI, MISP, ATT&CK) are skipped and noted "
+                "in the response's 'warnings' list rather than failing the whole investigation."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "alert_id": {
+                        "type": "string",
+                        "description": "The ID of the SIEM alert to investigate.",
+                    },
+                    "case_id": {
+                        "type": "string",
+                        "description": (
+                            "Optional case ID to attach the generated report to as a comment. "
+                            "The alert and the case are different ID spaces, so this must be given "
+                            "explicitly - it is not inferred from alert_id."
+                        ),
+                    },
+                    "minutes_before": {
+                        "type": "integer",
+                        "description": "Minutes before the alert's timestamp to include when searching nearby logs",
+                        "default": 30,
+                    },
+                    "minutes_after": {
+                        "type": "integer",
+                        "description": "Minutes after the alert's timestamp to include when searching nearby logs",
+                        "default": 30,
+                    },
+                },
+                "required": ["alert_id"],
+            },
+        }
+
     def _register_rules_tools(self) -> None:
         """
         Register rules engine tools.
@@ -3474,6 +3552,23 @@ To be populated during investigation.
             result = tools_llm.generate_investigation_report(
                 context=args["context"],
                 client=self.ollama_client,
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
+
+        # End-to-end alert investigation pipeline
+        elif tool_name == "investigate_alert" and self.siem_client and self.ollama_client:
+            result = investigate_alert_module.investigate_alert(
+                alert_id=args["alert_id"],
+                siem_client=self.siem_client,
+                cti_clients=self.cti_clients,
+                misp_client=self.misp_client,
+                attack_mapper=self.attack_mapper,
+                llm_client=self.ollama_client,
+                case_client=self.case_client,
+                case_id=args.get("case_id"),
+                minutes_before=args.get("minutes_before", 30),
+                minutes_after=args.get("minutes_after", 30),
             )
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
             return result
