@@ -56,6 +56,25 @@ jobs:
         # on changed lines only, not the whole repo) once it's being watched.
         run: pytest tests/ -v --cov=src --cov-report=term-missing
 
+      - name: Add coverage summary
+        # Surfaces the coverage % on the run's Summary tab (one click from the
+        # check, rendered as markdown) instead of leaving it buried inside the
+        # previous step's raw log output. Runs even if tests failed, so
+        # coverage is still visible on a red run.
+        if: always()
+        run: |
+          {
+            echo "## Test Coverage"
+            echo ""
+            echo "**Total: $(coverage report --format=total)%**"
+            echo ""
+            echo "<details><summary>Per-file breakdown</summary>"
+            echo ""
+            coverage report --format=markdown
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   lint:
     name: Lint (ruff)
     runs-on: ubuntu-latest
