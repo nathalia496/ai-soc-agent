@@ -47,8 +47,14 @@ jobs:
           path: data/attack
           key: attack-dataset-v1
 
-      - name: Run test suite
-        run: pytest tests/ -v
+      - name: Run test suite with coverage
+        # Informational only (no --cov-fail-under): the codebase is at ~16%
+        # coverage today, so enforcing a minimum now would just make every PR
+        # red regardless of what changed - same trap as the pre-existing test
+        # failures and the first ruff pass. This makes the number visible so
+        # it can be tracked over time; revisit enforcing a threshold (ideally
+        # on changed lines only, not the whole repo) once it's being watched.
+        run: pytest tests/ -v --cov=src --cov-report=term-missing
 
   lint:
     name: Lint (ruff)
