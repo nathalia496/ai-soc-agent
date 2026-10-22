@@ -42,8 +42,9 @@ from ..integrations.kb import FileSystemKBClient
 from ..integrations.eng.trello.trello_client import TrelloClient
 from ..integrations.eng.clickup.clickup_client import ClickUpClient
 from ..integrations.eng.github.github_client import GitHubClient
+from ..integrations.attack.attack_mapper import AttackMapper
+from ..orchestrator import tools_case, tools_cti, tools_edr, tools_siem, tools_kb, tools_eng, tools_attack, tools_llm
 from ..integrations.llm.ollama_client import OllamaClient
-from ..orchestrator import tools_case, tools_cti, tools_edr, tools_siem, tools_kb, tools_eng, tools_llm
 from .rules_engine import RulesEngine
 from .agent_profiles import AgentProfileManager
 from .runbook_manager import RunbookManager
@@ -152,6 +153,7 @@ class SamiGPTMCPServer:
         misp_client: Optional[MISPClient] = None,
         kb_client: Optional[KBClient] = None,
         eng_client: Optional[Union[TrelloClient, ClickUpClient, GitHubClient]] = None,
+        attack_mapper: Optional[AttackMapper] = None,
         ollama_client: Optional[OllamaClient] = None,
     ):
         """
@@ -164,6 +166,8 @@ class SamiGPTMCPServer:
             cti_client: CTI (Cyber Threat Intelligence) client (single, for backward compatibility).
             cti_clients: List of CTI clients (for multi-platform support).
             misp_client: MISP client (independent of cti_client/cti_clients).
+            attack_mapper: MITRE ATT&CK technique mapper. Defaults to a locally
+                bundled dataset, so no config is required.
             ollama_client: Ollama report-generation client.
         """
         self.case_client = case_client
@@ -180,6 +184,7 @@ class SamiGPTMCPServer:
         # KB client defaults to filesystem-based client so it is always available
         self.kb_client: KBClient = kb_client or FileSystemKBClient()
         self.eng_client = eng_client
+        self.attack_mapper = attack_mapper
         self.ollama_client = ollama_client
         self.rules_engine = RulesEngine(
             case_client=case_client,
@@ -215,6 +220,8 @@ class SamiGPTMCPServer:
         self._register_kb_tools()
         # Engineering tools (Trello)
         self._register_eng_tools()
+        # MITRE ATT&CK technique mapping
+        self._register_attack_tools()
         # LLM report-generation tools (Ollama)
         self._register_llm_tools()
 
@@ -1935,6 +1942,48 @@ class SamiGPTMCPServer:
                 "Configure 'misp' in config.json to enable it."
             )
 
+    def _register_attack_tools(self) -> None:
+        """
+        Register MITRE ATT&CK technique mapping tools.
+
+        Available tools:
+        - map_to_attack: Match free-text investigation findings against
+          MITRE ATT&CK Enterprise techniques.
+        """
+        if not self.attack_mapper:
+            self._mcp_logger.warning(
+                "map_to_attack not registered: No ATT&CK mapper configured."
+            )
+            return
+
+        self._mcp_logger.info("Registering 1 ATT&CK tool (map_to_attack)")
+
+        self.tools["map_to_attack"] = {
+            "name": "map_to_attack",
+            "description": (
+                "Match investigation findings (process behavior, command lines, detection "
+                "descriptions, analyst notes) against MITRE ATT&CK Enterprise techniques to "
+                "identify likely tactics/techniques involved. Returns technique IDs, names, "
+                "tactics, and a relevance score. Use this to annotate a case or alert with "
+                "ATT&CK technique mappings during investigation."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Free text describing the observed behavior to match against ATT&CK techniques.",
+                    },
+                    "top_n": {
+                        "type": "integer",
+                        "description": "Maximum number of techniques to return",
+                        "default": 5,
+                    },
+                },
+                "required": ["text"],
+            },
+        }
+
     def _register_llm_tools(self) -> None:
         """
         Register LLM report-generation tools.
@@ -3410,6 +3459,16 @@ To be populated during investigation.
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
             return result
 
+        # ATT&CK tools
+        elif tool_name == "map_to_attack" and self.attack_mapper:
+            result = tools_attack.map_to_attack(
+                text=args["text"],
+                mapper=self.attack_mapper,
+                top_n=args.get("top_n", 5),
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
+
         # LLM report-generation tools
         elif tool_name == "generate_investigation_report" and self.ollama_client:
             result = tools_llm.generate_investigation_report(
@@ -3990,6 +4049,18 @@ async def main() -> None:
                 except Exception as e:
                     mcp_logger.warning(f"Failed to initialize Trello client: {e}")
 
+    # Initialize MITRE ATT&CK technique mapper (no config needed; uses a
+    # locally cached dataset, downloading it on first run if missing)
+    attack_mapper = None
+    try:
+        mcp_logger.info("Attempting to initialize ATT&CK mapper...")
+        attack_mapper = AttackMapper()
+        logger.info("ATT&CK mapper initialized")
+        mcp_logger.info("✓ ATT&CK mapper initialized successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize ATT&CK mapper: {e}")
+        mcp_logger.error(f"✗ Failed to initialize ATT&CK mapper: {e}", exc_info=True)
+
     # Create MCP server
     server = SamiGPTMCPServer(
         case_client=case_client,
@@ -3999,6 +4070,7 @@ async def main() -> None:
         cti_clients=cti_clients if len(cti_clients) > 0 else None,  # Pass list of clients
         misp_client=misp_client,
         eng_client=eng_client,
+        attack_mapper=attack_mapper,
         ollama_client=ollama_client,
     )
 
@@ -4013,6 +4085,7 @@ async def main() -> None:
     mcp_logger.info(f"  EDR: {'✓ Configured' if edr_client else '✗ Not configured (6 tools unavailable)'}")
     mcp_logger.info(f"  CTI: {'✓ Configured' if cti_client else '✗ Not configured (1 tool unavailable)'}")
     mcp_logger.info(f"  MISP: {'✓ Configured' if misp_client else '✗ Not configured (1 tool unavailable)'}")
+    mcp_logger.info(f"  ATT&CK: {'✓ Configured' if attack_mapper else '✗ Not configured (1 tool unavailable)'}")
     eng_provider = "None"
     if eng_client:
         if isinstance(eng_client, GitHubClient):
