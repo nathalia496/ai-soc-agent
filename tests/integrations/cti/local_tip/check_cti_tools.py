@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """
-Integration test for CTI tools.
+Manual end-to-end check for the CTI tool wrapper functions.
 
-Tests the CTI tool wrapper functions end-to-end.
+Not a pytest test: requires a real, reachable Local TIP server. Named
+`check_*` rather than `test_*` on purpose so pytest doesn't try to collect
+and run it automatically (it would error out without live infra available).
+Run it by hand: python tests/integrations/cti/local_tip/check_cti_tools.py
 """
 
 import sys
@@ -10,7 +13,7 @@ import json
 from pathlib import Path
 
 # Add project root to path
-# File is at: tests/integrations/cti/local_tip/test_cti_tools.py
+# File is at: tests/integrations/cti/local_tip/check_cti_tools.py
 # Need to go up 6 levels: local_tip -> cti -> integrations -> tests -> project root
 project_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))

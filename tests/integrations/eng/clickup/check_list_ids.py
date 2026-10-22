@@ -1,5 +1,11 @@
 """
-Test potential list IDs extracted from URLs.
+Manual check of potential ClickUp list IDs extracted from URLs.
+
+Not a pytest test: requires a real, reachable ClickUp account/API token.
+Named `check_*` rather than `test_*` on purpose so pytest doesn't try to
+collect and run it automatically (it would error out without live infra
+available). Run it by hand:
+python tests/integrations/eng/clickup/check_list_ids.py
 """
 
 import os
