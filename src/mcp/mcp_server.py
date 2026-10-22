@@ -42,7 +42,8 @@ from ..integrations.kb import FileSystemKBClient
 from ..integrations.eng.trello.trello_client import TrelloClient
 from ..integrations.eng.clickup.clickup_client import ClickUpClient
 from ..integrations.eng.github.github_client import GitHubClient
-from ..orchestrator import tools_case, tools_cti, tools_edr, tools_siem, tools_kb, tools_eng
+from ..integrations.llm.ollama_client import OllamaClient
+from ..orchestrator import tools_case, tools_cti, tools_edr, tools_siem, tools_kb, tools_eng, tools_llm
 from .rules_engine import RulesEngine
 from .agent_profiles import AgentProfileManager
 from .runbook_manager import RunbookManager
@@ -151,6 +152,7 @@ class SamiGPTMCPServer:
         misp_client: Optional[MISPClient] = None,
         kb_client: Optional[KBClient] = None,
         eng_client: Optional[Union[TrelloClient, ClickUpClient, GitHubClient]] = None,
+        ollama_client: Optional[OllamaClient] = None,
     ):
         """
         Initialize the MCP server.
@@ -162,6 +164,7 @@ class SamiGPTMCPServer:
             cti_client: CTI (Cyber Threat Intelligence) client (single, for backward compatibility).
             cti_clients: List of CTI clients (for multi-platform support).
             misp_client: MISP client (independent of cti_client/cti_clients).
+            ollama_client: Ollama report-generation client.
         """
         self.case_client = case_client
         self.siem_client = siem_client
@@ -177,6 +180,7 @@ class SamiGPTMCPServer:
         # KB client defaults to filesystem-based client so it is always available
         self.kb_client: KBClient = kb_client or FileSystemKBClient()
         self.eng_client = eng_client
+        self.ollama_client = ollama_client
         self.rules_engine = RulesEngine(
             case_client=case_client,
             siem_client=siem_client,
@@ -211,6 +215,8 @@ class SamiGPTMCPServer:
         self._register_kb_tools()
         # Engineering tools (Trello)
         self._register_eng_tools()
+        # LLM report-generation tools (Ollama)
+        self._register_llm_tools()
 
     def _register_kb_tools(self) -> None:
         """
@@ -1929,6 +1935,51 @@ class SamiGPTMCPServer:
                 "Configure 'misp' in config.json to enable it."
             )
 
+    def _register_llm_tools(self) -> None:
+        """
+        Register LLM report-generation tools.
+
+        Available tools:
+        - generate_investigation_report: Generate a structured, recommendation-only
+          investigation report from free-text context using a local Ollama model.
+        """
+        if not self.ollama_client:
+            self._mcp_logger.warning(
+                "generate_investigation_report not registered: No Ollama client configured. "
+                "Configure 'ollama' in config.json to enable it."
+            )
+            return
+
+        self._mcp_logger.info("Registering 1 LLM tool (generate_investigation_report)")
+
+        self.tools["generate_investigation_report"] = {
+            "name": "generate_investigation_report",
+            "description": (
+                "Generate a structured investigation report from free-text investigation context "
+                "(alert details, logs, CTI findings, etc.) using a local LLM. "
+                "This tool is strictly advisory: it analyzes the context you provide and returns a "
+                "recommendation for a human analyst to review. It never executes, blocks, remediates, "
+                "or otherwise takes action itself - the output is a suggestion only, and any next_steps "
+                "it returns must still be carried out by a human analyst. "
+                "Response includes: timeline (chronological events), observables (indicators relevant "
+                "to the investigation), hypothesis (likely explanation of what occurred), and next_steps "
+                "(recommended, not yet performed, actions for the analyst)."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "context": {
+                        "type": "string",
+                        "description": (
+                            "Free-text investigation context to analyze - e.g. alert details, "
+                            "logs, or CTI findings."
+                        ),
+                    }
+                },
+                "required": ["context"],
+            },
+        }
+
     def _register_rules_tools(self) -> None:
         """
         Register rules engine tools.
@@ -3359,6 +3410,15 @@ To be populated during investigation.
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
             return result
 
+        # LLM report-generation tools
+        elif tool_name == "generate_investigation_report" and self.ollama_client:
+            result = tools_llm.generate_investigation_report(
+                context=args["context"],
+                client=self.ollama_client,
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
+
         # Rules engine tools
         elif tool_name == "list_rules":
             result = {"rules": self.rules_engine.list_rules()}
@@ -3872,6 +3932,20 @@ async def main() -> None:
             logger.error(f"Failed to initialize MISP client: {e}")
             mcp_logger.error(f"✗ Failed to initialize MISP client: {e}", exc_info=True)
 
+    # Initialize Ollama client (report generation)
+    ollama_client = None
+    if config.ollama:
+        try:
+            mcp_logger.info("Attempting to initialize Ollama client...")
+            ollama_client = OllamaClient.from_config(config)
+            logger.info("Ollama client initialized")
+            mcp_logger.info("✓ Ollama client initialized successfully")
+            mcp_logger.info(f"    Ollama URL: {config.ollama.base_url}")
+            mcp_logger.info(f"    Ollama model: {config.ollama.model}")
+        except Exception as e:
+            logger.error(f"Failed to initialize Ollama client: {e}")
+            mcp_logger.error(f"✗ Failed to initialize Ollama client: {e}", exc_info=True)
+
     # Initialize Engineering client (Trello, ClickUp, or GitHub)
     eng_client = None
     if config.eng:
@@ -3925,6 +3999,7 @@ async def main() -> None:
         cti_clients=cti_clients if len(cti_clients) > 0 else None,  # Pass list of clients
         misp_client=misp_client,
         eng_client=eng_client,
+        ollama_client=ollama_client,
     )
 
     # Log tool registration summary
@@ -3947,6 +4022,7 @@ async def main() -> None:
         elif isinstance(eng_client, TrelloClient):
             eng_provider = "Trello"
     mcp_logger.info(f"  Engineering ({eng_provider}): {'✓ Configured' if eng_client else '✗ Not configured (2 tools unavailable)'}")
+    mcp_logger.info(f"  Ollama (LLM reports): {'✓ Configured' if ollama_client else '✗ Not configured (1 tool unavailable)'}")
     mcp_logger.info(f"  Rules Engine: ✓ Always available (2 tools)")
     mcp_logger.info("=" * 80)
     

@@ -70,6 +70,12 @@ Tools for enriching investigations with threat intelligence:
 - `lookup_hash_ti` - Look up a file hash in Local TIP or OpenCTI (whichever is configured)
 - `lookup_ioc_misp` - Look up an IP address or file hash in MISP for associated tags and events
 
+### LLM Tools (1 tool)
+Tools for generating investigation recommendations. Human-in-the-loop by design: the output is a
+suggestion for an analyst to review, never an action taken.
+- `generate_investigation_report` - Generate a structured report (timeline, observables, hypothesis,
+  next_steps) from free-text investigation context using a local Ollama model
+
 ### Rules Engine Tools (2 tools)
 Tools for automated workflows:
 - `list_rules` - List available workflows
@@ -149,6 +155,7 @@ Tools are conditionally available based on configured integrations:
 - **SIEM Tools**: Require Elastic or other SIEM configuration
 - **EDR Tools**: Require EDR platform configuration
 - **CTI Tools**: `lookup_hash_ti` requires `cti` (Local TIP or OpenCTI) configuration; `lookup_ioc_misp` requires `misp` configuration independently
+- **LLM Tools**: `generate_investigation_report` requires `ollama` configuration
 - **Rules Engine Tools**: Always available
 
 Use `list_rules` to discover available automated workflows.
