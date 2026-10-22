@@ -9,19 +9,23 @@ from __future__ import annotations
 
 import asyncio
 import json
-import os
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-from datetime import datetime, timedelta
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from ..agent_executor import AgentExecutor, ExecutionResult
-from ..session_manager import SessionManager, Session, SessionType, SessionStatus, AutorunConfig
 from ...core.logging import get_logger
+from ..agent_executor import AgentExecutor, ExecutionResult
+from ..session_manager import (
+    AutorunConfig,
+    SessionManager,
+    SessionStatus,
+    SessionType,
+)
 
 logger = get_logger("sami.ai_controller.web.server")
 
@@ -99,7 +103,7 @@ def initialize(config_storage_dir: Optional[str] = None, debug_ui: bool = False)
             UI_DEBUG_MODE,
             config_storage_dir or "default",
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error initializing web server components")
         raise
 
@@ -331,9 +335,12 @@ async def _check_autorun_condition(condition_function: str, executor: AgentExecu
         if condition_function == "get_recent_alerts":
             try:
                 # Import here to avoid heavy imports at module load
-                from ...core.config_storage import load_config_from_file
-                from src.integrations.siem.elastic.elastic_client import ElasticSIEMClient
+                from src.integrations.siem.elastic.elastic_client import (
+                    ElasticSIEMClient,
+                )
                 from src.orchestrator.tools_siem import get_recent_alerts
+
+                from ...core.config_storage import load_config_from_file
             except Exception as e:
                 logger.exception("Failed to import dependencies for get_recent_alerts condition: %s", e)
                 details["evaluation"] = "✗ CONDITION ERROR: Failed to import get_recent_alerts dependencies"
@@ -367,10 +374,15 @@ async def _check_autorun_condition(condition_function: str, executor: AgentExecu
         elif condition_function == "list_cases":
             try:
                 # Import here to avoid heavy imports at module load
-                from ...core.config_storage import load_config_from_file
-                from src.integrations.case_management.iris.iris_client import IRISCaseManagementClient
-                from src.integrations.case_management.thehive.thehive_client import TheHiveCaseManagementClient
+                from src.integrations.case_management.iris.iris_client import (
+                    IRISCaseManagementClient,
+                )
+                from src.integrations.case_management.thehive.thehive_client import (
+                    TheHiveCaseManagementClient,
+                )
                 from src.orchestrator.tools_case import list_cases
+
+                from ...core.config_storage import load_config_from_file
             except Exception as e:
                 logger.exception("Failed to import dependencies for list_cases condition: %s", e)
                 details["evaluation"] = "✗ CONDITION ERROR: Failed to import list_cases dependencies"
@@ -503,7 +515,7 @@ async def _check_autorun_condition(condition_function: str, executor: AgentExecu
             
             # Check for list_cases specific format - focus on cases count
             if "cases" in output and "count" in output:
-                cases = output.get("cases", [])
+                cases = output.get("cases", [])  # noqa: F841
                 cases_count = output.get("count", 0)
                 
                 details["cases_count"] = cases_count
@@ -519,7 +531,7 @@ async def _check_autorun_condition(condition_function: str, executor: AgentExecu
                 else:
                     logger.debug("Condition function '%s' returned 0 cases - skipping execution", condition_function)
                     details["evaluation"] = (
-                        f"✗ CONDITION FAILED: No open cases found. Skipping autorun execution."
+                        "✗ CONDITION FAILED: No open cases found. Skipping autorun execution."
                     )
                     return False, details
             

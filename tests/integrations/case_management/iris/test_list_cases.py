@@ -4,10 +4,10 @@ Standalone test script for list_cases function.
 Executes list_cases and prints the results.
 """
 
-import sys
 import json
-from pathlib import Path
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to path
 # File is at: tests/integrations/case_management/iris/test_list_cases.py
@@ -112,7 +112,7 @@ def main():
         
         print(f"\n{'='*80}")
         print(f"Executing list_cases: {description}")
-        print(f"Parameters:")
+        print("Parameters:")
         print(f"  status: {status if status else 'None (all statuses)'}")
         print(f"  limit: {limit}")
         print(f"{'='*80}")

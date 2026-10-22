@@ -42,7 +42,7 @@ def main():
     try:
         response = http_client.get("/v2/team")
         teams = response.get("teams", [])
-        print(f"✓ Successfully connected to ClickUp API")
+        print("✓ Successfully connected to ClickUp API")
         print(f"  Found {len(teams)} team(s)")
         if teams:
             print(f"  First team: {teams[0].get('name', 'N/A')} (ID: {teams[0].get('id', 'N/A')})")
@@ -59,23 +59,23 @@ def main():
     print(f"\n  Testing fine-tuning list ID: {clickup_config.fine_tuning_list_id}")
     try:
         response = http_client.get(f"/v2/list/{clickup_config.fine_tuning_list_id}")
-        print(f"  ✓ Fine-tuning list accessible")
+        print("  ✓ Fine-tuning list accessible")
         print(f"    List name: {response.get('name', 'N/A')}")
         print(f"    List ID: {response.get('id', 'N/A')}")
     except Exception as e:
         print(f"  ✗ Fine-tuning list not accessible: {e}")
-        print(f"    Make sure the list ID is correct")
+        print("    Make sure the list ID is correct")
     
     # Test engineering list
     print(f"\n  Testing engineering list ID: {clickup_config.engineering_list_id}")
     try:
         response = http_client.get(f"/v2/list/{clickup_config.engineering_list_id}")
-        print(f"  ✓ Engineering list accessible")
+        print("  ✓ Engineering list accessible")
         print(f"    List name: {response.get('name', 'N/A')}")
         print(f"    List ID: {response.get('id', 'N/A')}")
     except Exception as e:
         print(f"  ✗ Engineering list not accessible: {e}")
-        print(f"    Make sure the list ID is correct")
+        print("    Make sure the list ID is correct")
     
     print("\n" + "=" * 70)
     print("Connectivity test completed!")

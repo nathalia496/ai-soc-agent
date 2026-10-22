@@ -4,13 +4,12 @@ GitHub client for creating project items and recommendations.
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .github_http import GitHubHttpClient
-
 
 logger = get_logger("sami.integrations.github.client")
 

@@ -15,7 +15,6 @@ from pymisp import ExpandedPyMISP, PyMISPError
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 
-
 logger = get_logger("sami.integrations.cti.misp.http")
 
 

@@ -16,8 +16,8 @@ from ..api.case_management import (
     CaseObservable,
     CaseStatus,
 )
-from ..api.edr import EDRClient, Endpoint
-from ..api.siem import SIEMClient, SiemAlert
+from ..api.edr import EDRClient
+from ..api.siem import SiemAlert, SIEMClient
 from ..core.errors import IntegrationError
 
 
@@ -165,7 +165,7 @@ def enrich_case_from_edr(
         IntegrationError: If enrichment fails.
     """
     try:
-        case = case_client.get_case(case_id)
+        case = case_client.get_case(case_id)  # noqa: F841
     except Exception as e:
         raise IntegrationError(f"Failed to retrieve case {case_id}: {e}") from e
 

@@ -14,18 +14,16 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 import os
 import shutil
-import subprocess
 import sys
 from typing import Optional
 
-from ..agent_executor import AgentExecutor
-from ..session_manager import SessionManager, SessionType
 from ...core.config_storage import load_config_from_file
 from ...core.logging import configure_logging, get_logger
+from ..agent_executor import AgentExecutor
+from ..session_manager import SessionManager, SessionType
 
 logger = get_logger("sami.ai_controller.cli")
 
@@ -213,10 +211,10 @@ def main():
         
         # Start web server
         import uvicorn
-        from ..web.server import app, initialize
-        
+
         # Get config settings for web server from config.json
         from ...core.config_storage import get_config_dict
+        from ..web.server import app, initialize
         
         config_dict = get_config_dict()
         ai_controller_config = config_dict.get("ai_controller", {})

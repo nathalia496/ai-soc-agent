@@ -16,7 +16,6 @@ from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .misp_http import MISPHttpClient
 
-
 logger = get_logger("sami.integrations.cti.misp.client")
 
 _HASH_ALGORITHM_BY_LENGTH = {32: "md5", 40: "sha1", 64: "sha256", 128: "sha512"}

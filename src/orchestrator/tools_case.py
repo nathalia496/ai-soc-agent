@@ -11,14 +11,11 @@ from typing import Any, Dict, List, Optional
 
 from ..api.case_management import (
     Case,
-    CaseAssignment,
-    CaseComment,
     CaseManagementClient,
     CaseObservable,
     CasePriority,
     CaseSearchQuery,
     CaseStatus,
-    CaseSummary,
 )
 from ..core.errors import IntegrationError
 

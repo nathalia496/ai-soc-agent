@@ -15,10 +15,10 @@ import os
 import re
 import shutil
 import subprocess
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
-from typing import Any, Callable, Dict, List, Optional, Tuple
 from enum import Enum
+from typing import Any, Callable, Dict, Optional
 
 from ..core.config import SamiConfig
 from ..core.config_storage import load_config_from_file
@@ -93,7 +93,9 @@ class AgentExecutor:
     def _initialize_tools(self):
         """Initialize the tool registry with available tools."""
         # Import tools from orchestrator
-        from ..orchestrator import tools_cti, tools_case, tools_edr, tools_siem, tools_kb
+        from ..orchestrator import (
+            tools_cti,
+        )
         
         # CTI tools
         self._tool_registry["lookup_hash_ti"] = tools_cti.lookup_hash_ti
@@ -541,18 +543,22 @@ class AgentExecutor:
             
             if "cti" in tool_name.lower() or "ti" in tool_name.lower():
                 # Need CTI clients - load from config dict to support cti_opencti
-                from src.core.config_storage import get_config_dict
                 from src.core.config import CTIConfig, SamiConfig
+                from src.core.config_storage import get_config_dict
                 
                 config_dict = get_config_dict()
                 
                 if self.config.cti:
-                    from src.integrations.cti.local_tip.local_tip_client import LocalTipCTIClient
+                    from src.integrations.cti.local_tip.local_tip_client import (
+                        LocalTipCTIClient,
+                    )
                     clients.append(LocalTipCTIClient.from_config(self.config))
                 
                 # Check for cti_opencti in config dict (not in SamiConfig dataclass)
                 if config_dict.get("cti_opencti"):
-                    from src.integrations.cti.opencti.opencti_client import OpenCTIClient
+                    from src.integrations.cti.opencti.opencti_client import (
+                        OpenCTIClient,
+                    )
                     cti_opencti_config = config_dict["cti_opencti"]
                     opencti_cfg = CTIConfig(
                         cti_type=cti_opencti_config.get("cti_type", "opencti"),
@@ -567,22 +573,30 @@ class AgentExecutor:
             if "siem" in tool_name.lower() or "alert" in tool_name.lower():
                 # Need SIEM client
                 if self.config.elastic:
-                    from src.integrations.siem.elastic.elastic_client import ElasticSIEMClient
+                    from src.integrations.siem.elastic.elastic_client import (
+                        ElasticSIEMClient,
+                    )
                     clients.append(ElasticSIEMClient.from_config(self.config))
             
             if "edr" in tool_name.lower():
                 # Need EDR client
                 if self.config.edr:
-                    from src.integrations.edr.elastic_defend.elastic_defend_client import ElasticDefendEDRClient
+                    from src.integrations.edr.elastic_defend.elastic_defend_client import (
+                        ElasticDefendEDRClient,
+                    )
                     clients.append(ElasticDefendEDRClient.from_config(self.config))
             
             if "case" in tool_name.lower():
                 # Need case management client
                 if self.config.iris:
-                    from src.integrations.case_management.iris.iris_client import IRISCaseManagementClient
+                    from src.integrations.case_management.iris.iris_client import (
+                        IRISCaseManagementClient,
+                    )
                     clients.append(IRISCaseManagementClient.from_config(self.config))
                 elif self.config.thehive:
-                    from src.integrations.case_management.thehive.thehive_client import TheHiveCaseManagementClient
+                    from src.integrations.case_management.thehive.thehive_client import (
+                        TheHiveCaseManagementClient,
+                    )
                     clients.append(TheHiveCaseManagementClient.from_config(self.config))
             
             if not clients:

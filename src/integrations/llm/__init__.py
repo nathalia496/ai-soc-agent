@@ -5,6 +5,6 @@ This module provides a client for generating structured JSON reports
 (timeline, observables, hypothesis, next_steps) via a local Ollama server.
 """
 
-from .ollama_client import OllamaClient, REPORT_SYSTEM_PROMPT
+from .ollama_client import REPORT_SYSTEM_PROMPT, OllamaClient
 
 __all__ = ["OllamaClient", "REPORT_SYSTEM_PROMPT"]

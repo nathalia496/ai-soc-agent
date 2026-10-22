@@ -14,7 +14,6 @@ import requests
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 
-
 logger = get_logger("sami.integrations.cti.opencti.http")
 
 
@@ -339,7 +338,7 @@ class OpenCTIHttpClient:
                     indicator["labels"].append(label_value)
                 
                 if labels:
-                    logger.debug(f"Indicator {indicator_id} has {len(labels)} label(s): {[l['node'].get('value') for l in labels]}")
+                    logger.debug(f"Indicator {indicator_id} has {len(labels)} label(s): {[l['node'].get('value') for l in labels]}")  # noqa: E741
                 
                 # Extract kill chain phases
                 kill_chain = indicator_node.get("killChainPhases", {}).get("edges", [])

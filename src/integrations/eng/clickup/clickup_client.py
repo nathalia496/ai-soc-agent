@@ -4,13 +4,12 @@ ClickUp client for creating tasks and recommendations.
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
 
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .clickup_http import ClickUpHttpClient
-
 
 logger = get_logger("sami.integrations.clickup.client")
 

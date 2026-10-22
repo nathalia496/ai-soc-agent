@@ -4,11 +4,11 @@ Orchestrator tools for Engineering integrations (Trello, ClickUp, GitHub).
 
 from __future__ import annotations
 
-from typing import Dict, Any, Optional, Union
+from typing import Any, Dict, Optional, Union
 
-from ..integrations.eng.trello.trello_client import TrelloClient
 from ..integrations.eng.clickup.clickup_client import ClickUpClient
 from ..integrations.eng.github.github_client import GitHubClient
+from ..integrations.eng.trello.trello_client import TrelloClient
 
 
 def create_fine_tuning_recommendation(

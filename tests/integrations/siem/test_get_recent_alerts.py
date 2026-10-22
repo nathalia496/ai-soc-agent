@@ -4,11 +4,11 @@ Standalone test script for get_recent_alerts function.
 Executes get_recent_alerts and prints the results.
 """
 
-import sys
-import json
 import argparse
-from pathlib import Path
+import json
+import sys
 from datetime import datetime
+from pathlib import Path
 
 # Add project root to path
 # File is at: tests/integrations/siem/test_get_recent_alerts.py
@@ -149,7 +149,7 @@ def print_results(results: dict):
     # Print summary statistics
     if "summary" in results:
         summary = results["summary"]
-        print(f"\nSummary:")
+        print("\nSummary:")
         print(f"  Total alerts found: {summary.get('total_alerts', 0)}")
         print(f"  Total groups: {summary.get('total_groups', 0)}")
         print(f"  Time range: {summary.get('earliest_time', 'N/A')} to {summary.get('latest_time', 'N/A')}")

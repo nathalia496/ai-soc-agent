@@ -16,47 +16,51 @@ import logging
 import os
 import sys
 import warnings
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 # Suppress urllib3 warnings that go to stderr (which can confuse MCP clients)
 warnings.filterwarnings("ignore", category=UserWarning, module="urllib3")
 
 from ..api.case_management import CaseManagementClient, CaseSearchQuery
 from ..api.edr import EDRClient
-from ..api.siem import SIEMClient
 from ..api.kb import KBClient
+from ..api.siem import SIEMClient
 from ..core.config import SamiConfig
 from ..core.logging import configure_logging, get_logger
+from ..integrations.attack.attack_mapper import AttackMapper
 from ..integrations.case_management.iris.iris_client import (
     IRISCaseManagementClient,
 )
 from ..integrations.case_management.thehive.thehive_client import (
     TheHiveCaseManagementClient,
 )
-from ..integrations.siem.elastic.elastic_client import ElasticSIEMClient
-from ..integrations.edr.elastic_defend.elastic_defend_client import ElasticDefendEDRClient
 from ..integrations.cti.local_tip.local_tip_client import LocalTipCTIClient
-from ..integrations.cti.opencti.opencti_client import OpenCTIClient
 from ..integrations.cti.misp.misp_client import MISPClient
-from ..integrations.kb import FileSystemKBClient
-from ..integrations.eng.trello.trello_client import TrelloClient
+from ..integrations.cti.opencti.opencti_client import OpenCTIClient
+from ..integrations.edr.elastic_defend.elastic_defend_client import (
+    ElasticDefendEDRClient,
+)
 from ..integrations.eng.clickup.clickup_client import ClickUpClient
 from ..integrations.eng.github.github_client import GitHubClient
-from ..integrations.attack.attack_mapper import AttackMapper
+from ..integrations.eng.trello.trello_client import TrelloClient
+from ..integrations.kb import FileSystemKBClient
+from ..integrations.llm.ollama_client import OllamaClient
+from ..integrations.siem.elastic.elastic_client import ElasticSIEMClient
 from ..orchestrator import (
+    investigate_alert as investigate_alert_module,
+)
+from ..orchestrator import (
+    tools_attack,
     tools_case,
     tools_cti,
     tools_edr,
-    tools_siem,
-    tools_kb,
     tools_eng,
-    tools_attack,
+    tools_kb,
     tools_llm,
-    investigate_alert as investigate_alert_module,
+    tools_siem,
 )
-from ..integrations.llm.ollama_client import OllamaClient
-from .rules_engine import RulesEngine
 from .agent_profiles import AgentProfileManager
+from .rules_engine import RulesEngine
 from .runbook_manager import RunbookManager
 
 logger = get_logger(__name__)
@@ -2418,7 +2422,8 @@ class SamiGPTMCPServer:
                     # Triage runbooks will create cases themselves after quick assessment
                     # Create new case following case standard
                     from datetime import datetime
-                    from ..api.case_management import Case, CaseStatus, CasePriority
+
+                    from ..api.case_management import Case, CasePriority, CaseStatus
                     
                     # Get alert details if available
                     alert_type = "Security Alert"
@@ -2533,10 +2538,10 @@ To be populated during investigation.
                     execution_instructions += "IMPORTANT: Create a case using create_case tool if one doesn't exist, following the case standard in standards/case_standard.md. "
         
         execution_instructions += (
-            f"Follow the workflow steps in the runbook below. Use the appropriate MCP tools for each step. "
-            f"Document your progress and findings in case comments as specified in the runbook. "
-            f"Attach all observables (IOCs) to the case using attach_observable_to_case. "
-            f"Follow the case standard format for all documentation."
+            "Follow the workflow steps in the runbook below. Use the appropriate MCP tools for each step. "
+            "Document your progress and findings in case comments as specified in the runbook. "
+            "Attach all observables (IOCs) to the case using attach_observable_to_case. "
+            "Follow the case standard format for all documentation."
         )
         
         return {
@@ -3812,7 +3817,7 @@ async def _read_stdio():
                 try:
                     parsed = json.loads(item)
                     mcp_logger.debug(f"Parsed JSON structure - method: {parsed.get('method')}, has_id: {'id' in parsed}, id_value: {parsed.get('id')}")
-                except:
+                except:  # noqa: E722
                     pass  # Not JSON, that's okay
                 yield item
         except asyncio.CancelledError:
@@ -3829,6 +3834,7 @@ async def main() -> None:
     # Load configuration from JSON file only (ignore .env)
     import json
     from pathlib import Path
+
     from ..core.config_storage import _dict_to_config
     
     # Find config.json relative to project root (where this file is located)
@@ -4006,7 +4012,6 @@ async def main() -> None:
     # This allows config.json to have both "cti" (local_tip) and "cti_opencti" (opencti)
     config_dict = None
     try:
-        from ..core.config_storage import load_config_from_file
         import json
         import os
         config_file = os.getenv("SAMIGPT_CONFIG_FILE", "config.json")
@@ -4173,7 +4178,7 @@ async def main() -> None:
     total_tools = len(server.tools)
     logger.info(f"MCP server initialized with {total_tools} tools")
     mcp_logger.info("=" * 80)
-    mcp_logger.info(f"Tool Registration Summary:")
+    mcp_logger.info("Tool Registration Summary:")
     mcp_logger.info(f"  Total tools available: {total_tools}")
     mcp_logger.info(f"  Case Management: {'✓ Configured' if case_client else '✗ Not configured (8 tools unavailable)'}")
     mcp_logger.info(f"  SIEM: {'✓ Configured' if siem_client else '✗ Not configured (16 tools unavailable)'}")
@@ -4191,7 +4196,7 @@ async def main() -> None:
             eng_provider = "Trello"
     mcp_logger.info(f"  Engineering ({eng_provider}): {'✓ Configured' if eng_client else '✗ Not configured (2 tools unavailable)'}")
     mcp_logger.info(f"  Ollama (LLM reports): {'✓ Configured' if ollama_client else '✗ Not configured (1 tool unavailable)'}")
-    mcp_logger.info(f"  Rules Engine: ✓ Always available (2 tools)")
+    mcp_logger.info("  Rules Engine: ✓ Always available (2 tools)")
     mcp_logger.info("=" * 80)
     
     if total_tools == 2:

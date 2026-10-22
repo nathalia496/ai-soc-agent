@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
-from pymisp import MISPAttribute, MISPEvent, MISPTag, PyMISPError
+from pymisp import MISPAttribute, MISPEvent, PyMISPError
 
 from src.core.config import MISPConfig, SamiConfig
 from src.core.errors import IntegrationError

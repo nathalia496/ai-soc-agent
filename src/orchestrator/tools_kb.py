@@ -7,7 +7,7 @@ handling and return values, reading from ``client_env/*`` on the filesystem.
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from ..api.kb import KBClient
 from ..core.errors import IntegrationError

@@ -14,16 +14,13 @@ from ....api.siem import (
     IpAddressReport,
     QueryResult,
     RelatedEntities,
-    SIEMClient,
     SiemEvent,
-    Severity,
     SourceType,
 )
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .elastic_http import ElasticHttpClient
-
 
 logger = get_logger("sami.integrations.elastic.client")
 
@@ -791,7 +788,7 @@ class ElasticSIEMClient:
         
         # Parse KQL query
         # Remove pipe operators and parse filters
-        filters = []
+        filters = []  # noqa: F841
         
         # Handle time range (e.g., | where timestamp > ago(1h))
         if "ago(" in kql_query.lower():
@@ -804,7 +801,7 @@ class ElasticSIEMClient:
                 elif unit == "d":
                     hours_back = value * 24
                 elif unit == "m":
-                    hours_back = value / 60
+                    hours_back = value / 60  # noqa: F841
         
         # Remove time filters from query string for field parsing
         query_str = re.sub(r'\|\s*where\s+timestamp.*', '', kql_query, flags=re.IGNORECASE)
@@ -1954,7 +1951,7 @@ class ElasticSIEMClient:
                         verified_comments = [verified_comments] if verified_comments else []
                     logger.debug(f"Verified: Document has {len(verified_comments)} comments in signal.ai.comments.comment")
                     if not verified_comments:
-                        logger.warning(f"Update reported success but no comments found in verified document")
+                        logger.warning("Update reported success but no comments found in verified document")
             except Exception as e:
                 logger.warning(f"Could not verify update: {e}")
             
@@ -3214,8 +3211,8 @@ class ElasticSIEMClient:
         try:
             # Parse ISO timestamps
             try:
-                start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
-                end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
+                start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))  # noqa: F841
+                end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))  # noqa: F841
             except Exception as e:
                 raise IntegrationError(f"Invalid time format: {e}")
             

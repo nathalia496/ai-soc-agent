@@ -12,7 +12,6 @@ from ....api.edr import (
     ArtifactCollectionRequest,
     Detection,
     DetectionType,
-    EDRClient,
     Endpoint,
     Platform,
     Process,
@@ -21,7 +20,6 @@ from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
 from ....core.logging import get_logger
 from .elastic_defend_http import ElasticDefendHttpClient
-
 
 logger = get_logger("sami.integrations.elastic_defend.client")
 

@@ -4,14 +4,15 @@ Unit tests for Local TIP CTI client.
 Tests hash lookup functionality and error handling.
 """
 
+from unittest.mock import Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 import requests
 
 from src.core.config import CTIConfig, SamiConfig
 from src.core.errors import IntegrationError
-from src.integrations.cti.local_tip.local_tip_http import LocalTipHttpClient
 from src.integrations.cti.local_tip.local_tip_client import LocalTipCTIClient
+from src.integrations.cti.local_tip.local_tip_http import LocalTipHttpClient
 
 
 class TestLocalTipHttpClient:

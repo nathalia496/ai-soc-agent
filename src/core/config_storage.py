@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 
 from .config import (
-    CTIConfig,
     ClickUpConfig,
+    CTIConfig,
     EDRConfig,
     ElasticConfig,
     EngConfig,
@@ -29,7 +29,6 @@ from .config import (
     TrelloConfig,
 )
 from .errors import ConfigError
-
 
 CONFIG_FILE = os.getenv("SAMIGPT_CONFIG_FILE", "config.json")
 ENV_FILE = os.getenv("SAMIGPT_ENV_FILE", ".env")
@@ -422,7 +421,7 @@ def _ensure_starting_config(config_path: str = CONFIG_FILE, starting_config_path
     if not config_file.exists() and starting_config_file.exists():
         try:
             shutil.copy2(starting_config_file, config_file)
-        except Exception as e:
+        except Exception:
             # If copy fails, continue - we'll use defaults
             pass
 
@@ -457,7 +456,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE, env_path: str = ENV_FI
             env_dict = load_config_from_env_file(env_path)
             if env_dict:
                 return _env_dict_to_config(env_dict)
-        except Exception as e:
+        except Exception:
             # If .env parsing fails, try JSON
             pass
 
@@ -480,7 +479,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE, env_path: str = ENV_FI
             return _dict_to_config(data)
         except json.JSONDecodeError as e:
             raise ConfigError(f"Invalid JSON in starting config file: {e}") from e
-        except Exception as e:
+        except Exception:
             # If starting config fails, continue to defaults
             pass
 

@@ -8,8 +8,8 @@ and run it automatically (it would error out without live infra available).
 Run it by hand: python tests/integrations/cti/local_tip/check_cti_tools.py
 """
 
-import sys
 import json
+import sys
 from pathlib import Path
 
 # Add project root to path
@@ -18,7 +18,6 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.core.config import SamiConfig, CTIConfig
 from src.core.config_storage import load_config_from_file
 from src.integrations.cti.local_tip.local_tip_client import LocalTipCTIClient
 from src.orchestrator.tools_cti import lookup_hash_ti
@@ -31,7 +30,7 @@ def test_tool(tool_name: str, func, *args, **kwargs):
     print(f"{'='*80}")
     try:
         result = func(*args, **kwargs)
-        print(f"✓ SUCCESS")
+        print("✓ SUCCESS")
         print(f"Result type: {type(result)}")
         if isinstance(result, dict):
             print(f"Result keys: {list(result.keys())}")

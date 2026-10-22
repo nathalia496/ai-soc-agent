@@ -129,7 +129,7 @@ if STATIC_DIR.exists():
 def is_authenticated(request: Request) -> bool:
     """Check if the request is authenticated."""
     session_data = getattr(request.state, "session", {})
-    return session_data.get("authenticated", False) == True
+    return session_data.get("authenticated", False) == True  # noqa: E712
 
 
 def require_auth(request: Request) -> None:
@@ -257,7 +257,7 @@ async def logout(request: Request, response: Response):
 async def auth_status(request: Request):
     """Check authentication status."""
     session_data = getattr(request.state, "session", {})
-    authenticated = session_data.get("authenticated", False) == True
+    authenticated = session_data.get("authenticated", False) == True  # noqa: E712
     return JSONResponse(
         content={"authenticated": authenticated}
     )
@@ -370,7 +370,7 @@ async def update_config(request: Request, config_update: ConfigUpdate):
             }
 
         # Update and save config
-        updated_config = update_config_dict(updates)
+        updated_config = update_config_dict(updates)  # noqa: F841
         config_dict = get_config_dict()
 
         return JSONResponse(content={"success": True, "config": config_dict})
@@ -504,8 +504,8 @@ async def reload_config(request: Request):
 if __name__ == "__main__":
     import uvicorn
 
-    print(f"Starting SamiGPT Configuration Manager...")
-    print(f"Admin secret is set via SAMIGPT_ADMIN_SECRET environment variable")
+    print("Starting SamiGPT Configuration Manager...")
+    print("Admin secret is set via SAMIGPT_ADMIN_SECRET environment variable")
     if ADMIN_SECRET == "admin":
         print("WARNING: Using default admin secret! Set SAMIGPT_ADMIN_SECRET environment variable.")
     uvicorn.run(app, host="0.0.0.0", port=8080)

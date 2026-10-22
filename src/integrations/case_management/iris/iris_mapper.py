@@ -4,11 +4,10 @@ Mapping logic between generic case management DTOs and IRIS models/payloads.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from ....api.case_management import (
     Case,
-    CaseAssignment,
     CaseComment,
     CaseObservable,
     CasePriority,
@@ -22,7 +21,6 @@ from .iris_models import (
     parse_iris_case,
     parse_iris_ioc,
 )
-
 
 # Generic → IRIS
 

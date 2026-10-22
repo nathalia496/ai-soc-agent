@@ -2,15 +2,16 @@
 Detailed API test to diagnose ClickUp API issues.
 """
 
+import json
 import os
 import sys
-import json
 
 # Add project root to path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../../.."))
 sys.path.insert(0, project_root)
 
 import requests
+
 from src.core.config_storage import load_config_from_file
 
 
@@ -61,18 +62,18 @@ def main():
         try:
             response = requests.get(url, headers=headers, timeout=30, verify=True)
             print(f"Status Code: {response.status_code}")
-            print(f"Response Headers:")
+            print("Response Headers:")
             for key, value in response.headers.items():
                 print(f"  {key}: {value}")
-            print(f"\nResponse Body (first 500 chars):")
+            print("\nResponse Body (first 500 chars):")
             print(response.text[:500])
             
             if response.status_code == 200:
                 try:
                     data = response.json()
-                    print(f"\nParsed JSON:")
+                    print("\nParsed JSON:")
                     print(json.dumps(data, indent=2)[:1000])
-                except:
+                except:  # noqa: E722
                     print("  (Not valid JSON)")
         except Exception as e:
             print(f"Exception: {e}")

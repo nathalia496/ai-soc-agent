@@ -14,7 +14,6 @@ import requests
 from ...core.errors import IntegrationError
 from ...core.logging import get_logger
 
-
 logger = get_logger("sami.integrations.llm.ollama.http")
 
 

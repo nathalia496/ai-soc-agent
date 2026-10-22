@@ -331,7 +331,7 @@ def clear_all(skip_confirmation: bool = False, skip_siem: bool = False):
     logger.info("=" * 70)
     
     if failed > 0:
-        logger.warning(f"Some scripts failed. Check the log file for details.")
+        logger.warning("Some scripts failed. Check the log file for details.")
         sys.exit(1)
     else:
         logger.info("All scripts executed successfully!")

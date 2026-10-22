@@ -7,7 +7,7 @@ then extracts the list IDs you need.
 
 import os
 import sys
-import json
+
 import requests
 
 # Add project root to path
@@ -109,9 +109,9 @@ def get_list_ids_from_views():
                     
                     # Check if this matches our view names
                     if "visibility" in list_name.lower() or "vis" in list_name.lower():
-                        print(f"    ⭐ MATCHES 'Visibility Tasks' - Use this ID for 'engineering_list_id'")
+                        print("    ⭐ MATCHES 'Visibility Tasks' - Use this ID for 'engineering_list_id'")
                     if "fine" in list_name.lower() or "tuning" in list_name.lower() or "fine-tuning" in list_name.lower():
-                        print(f"    ⭐ MATCHES 'Fine-tuning Tasks' - Use this ID for 'fine_tuning_list_id'")
+                        print("    ⭐ MATCHES 'Fine-tuning Tasks' - Use this ID for 'fine_tuning_list_id'")
             else:
                 print(f"✗ Failed to get folder lists: HTTP {folder_response.status_code}")
                 print(f"  Response: {folder_response.text[:200]}")
