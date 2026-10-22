@@ -76,6 +76,15 @@ suggestion for an analyst to review, never an action taken.
 - `generate_investigation_report` - Generate a structured report (timeline, observables, hypothesis,
   next_steps) from free-text investigation context using a local Ollama model
 
+### Investigation Pipeline Tools (1 tool)
+Chains the stages above into a single "alert in, report out" call. Human-in-the-loop by
+design: it only ever reads data and, optionally, adds a comment to an existing case - never
+a containment/remediation action.
+- `investigate_alert` - Fetch a SIEM alert, fetch nearby logs, enrich related hash/IP
+  indicators via CTI/MISP, map findings to MITRE ATT&CK techniques, and generate a
+  structured report, end to end. Requires `elastic` and `ollama`; CTI, MISP, and the ATT&CK
+  mapper enrich the investigation when configured but aren't required.
+
 ### Rules Engine Tools (2 tools)
 Tools for automated workflows:
 - `list_rules` - List available workflows
@@ -156,6 +165,7 @@ Tools are conditionally available based on configured integrations:
 - **EDR Tools**: Require EDR platform configuration
 - **CTI Tools**: `lookup_hash_ti` requires `cti` (Local TIP or OpenCTI) configuration; `lookup_ioc_misp` requires `misp` configuration independently
 - **LLM Tools**: `generate_investigation_report` requires `ollama` configuration
+- **Investigation Pipeline Tools**: `investigate_alert` requires `elastic` and `ollama`; `cti`/`misp`/the ATT&CK mapper are optional and enrich the investigation when available
 - **Rules Engine Tools**: Always available
 
 Use `list_rules` to discover available automated workflows.
