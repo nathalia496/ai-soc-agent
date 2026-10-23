@@ -1,6 +1,6 @@
-# SamiGPT MCP Server
+# AttackLens MCP Server
 
-This directory contains the Model Context Protocol (MCP) server implementation for SamiGPT, which exposes all investigation and response capabilities as tools that can be used by AI assistants and automation systems.
+This directory contains the Model Context Protocol (MCP) server implementation for AttackLens, which exposes all investigation and response capabilities as tools that can be used by AI assistants and automation systems.
 
 ## Overview
 
@@ -143,10 +143,10 @@ Add to `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "sami-gpt": {
+    "attack-lens": {
       "command": "python",
       "args": ["-m", "src.mcp.mcp_server"],
-      "cwd": "/path/to/SamiGPT"
+      "cwd": "/path/to/AttackLens"
     }
   }
 }

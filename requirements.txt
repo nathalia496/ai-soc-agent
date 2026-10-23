@@ -1,4 +1,4 @@
-# SamiGPT - Incident Response AI Agent
+# AttackLens - Incident Response AI Agent
 # Python dependencies
 
 # Core dependencies

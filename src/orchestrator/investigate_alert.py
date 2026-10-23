@@ -47,7 +47,7 @@ def investigate_alert(
     minutes_before: int = 30,
     minutes_after: int = 30,
     attack_top_n: int = 5,
-    comment_author: str = "SamiGPT",
+    comment_author: str = "AttackLens",
 ) -> Dict[str, Any]:
     """
     Investigate a SIEM alert end-to-end and produce a structured report.
@@ -311,7 +311,7 @@ def _build_summary_text(
 def _format_case_comment(report: Dict[str, Any], attack_matches: List[Dict[str, Any]]) -> str:
     """Format the generated report as a human-readable case comment."""
     lines = [
-        "**SamiGPT investigation report (recommendation only - requires human review)**",
+        "**AttackLens investigation report (recommendation only - requires human review)**",
         "",
         f"Hypothesis: {report.get('hypothesis', 'N/A')}",
     ]

@@ -1,5 +1,5 @@
 """
-Generic EDR API for SamiGPT.
+Generic EDR API for AttackLens.
 
 This module defines vendor-neutral DTOs and the ``EDRClient`` interface
 that orchestrator code and LLM tools will use for endpoint investigation

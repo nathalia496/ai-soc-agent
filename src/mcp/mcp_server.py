@@ -1,5 +1,5 @@
 """
-MCP (Model Context Protocol) server for SamiGPT.
+MCP (Model Context Protocol) server for AttackLens.
 
 This module implements an MCP server that exposes all investigation and
 response skills as tools that can be invoked by LLM clients like Open WebUI,
@@ -143,9 +143,9 @@ def configure_mcp_logging(log_dir: str = "logs") -> None:
     logger.info(f"MCP dedicated logging configured in: {mcp_log_dir}")
 
 
-class SamiGPTMCPServer:
+class AttackLensMCPServer:
     """
-    MCP server that exposes SamiGPT investigation skills as tools.
+    MCP server that exposes AttackLens investigation skills as tools.
     
     Implements the Model Context Protocol (MCP) specification using
     JSON-RPC 2.0 over stdio.
@@ -156,7 +156,7 @@ class SamiGPTMCPServer:
     SUPPORTED_PROTOCOL_VERSIONS = ["2024-11-05", "2025-06-18"]
     
     # Server info
-    SERVER_NAME = "sami-gpt"
+    SERVER_NAME = "attack-lens"
     SERVER_VERSION = "1.0.0"
 
     def __init__(
@@ -993,7 +993,7 @@ class SamiGPTMCPServer:
                     },
                     "source": {
                         "type": "string",
-                        "description": "Event source (e.g., 'SamiGPT', 'SIEM', 'EDR')"
+                        "description": "Event source (e.g., 'AttackLens', 'SIEM', 'EDR')"
                     },
                     "category_id": {
                         "type": "integer",
@@ -2573,7 +2573,7 @@ To be populated during investigation.
                         self.case_client.add_case_comment(
                             case_id=case_id,
                             content=f"Case created from alert {alert_id}. Executing runbook: {runbook_id}",
-                            author="SamiGPT Agent"
+                            author="AttackLens Agent"
                         )
                     except Exception:
                         pass
@@ -3970,7 +3970,7 @@ async def main() -> None:
     mcp_log_dir = config.logging.log_dir if config.logging else "logs"
     configure_mcp_logging(mcp_log_dir)
 
-    logger.info("Starting SamiGPT MCP Server...")
+    logger.info("Starting AttackLens MCP Server...")
     mcp_logger = logging.getLogger("sami.mcp")
     mcp_logger.info("=" * 80)
     mcp_logger.info("MCP Server Starting")
@@ -4098,7 +4098,7 @@ async def main() -> None:
     try:
         import json
         import os
-        config_file = os.getenv("SAMIGPT_CONFIG_FILE", "config.json")
+        config_file = os.getenv("ATTACKLENS_CONFIG_FILE", "config.json")
         if os.path.exists(config_file):
             with open(config_file, "r") as f:
                 config_dict = json.load(f)
@@ -4263,7 +4263,7 @@ async def main() -> None:
         mcp_logger.error(f"✗ Failed to initialize ATT&CK mapper: {e}", exc_info=True)
 
     # Create MCP server
-    server = SamiGPTMCPServer(
+    server = AttackLensMCPServer(
         case_client=case_client,
         siem_client=siem_client,
         edr_client=edr_client,

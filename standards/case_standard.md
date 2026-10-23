@@ -1,4 +1,4 @@
-# Case Standard for SamiGPT Investigations
+# Case Standard for AttackLens Investigations
 
 ## Overview
 

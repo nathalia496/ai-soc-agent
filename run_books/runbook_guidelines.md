@@ -1,6 +1,6 @@
 # Runbook Guidelines
 
-This document provides general guidelines for creating, maintaining, and executing runbooks within the SamiGPT MCP server environment.
+This document provides general guidelines for creating, maintaining, and executing runbooks within the AttackLens MCP server environment.
 
 ## General Principles
 
@@ -134,7 +134,7 @@ Runbooks **may** include a Mermaid sequence diagram to visualize the workflow, e
 *   **Scope of the Diagram:**
     *   Show interactions between:
         *   **Analyst/Agent** (human or autonomous agent).
-        *   **MCP Server** (SamiGPT runbook/agent tools).
+        *   **MCP Server** (AttackLens runbook/agent tools).
         *   **Domain Integrations** (case management, SIEM, EDR, CTI).
     *   Focus on the **actual tools** invoked (e.g., `execute_as_agent`, `execute_runbook`, `review_case`, `search_security_events`, `collect_forensic_artifacts`), not generic placeholders. Do not depict the agent invoking active-response tools (isolation, process kill) - no such tools exist.
 
