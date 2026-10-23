@@ -234,8 +234,12 @@ class TestLocalTipCTIClient:
 
         with pytest.raises(IntegrationError) as exc_info:
             client.lookup_hash("abc123")
-        
-        assert "Failed to lookup hash" in str(exc_info.value)
+
+        # lookup_hash() re-raises an IntegrationError as-is (no "Failed to
+        # lookup hash:" prefix) when the caught exception is already one -
+        # the same convention used by misp_client.py and opencti_client.py.
+        # The original message should pass through unchanged.
+        assert str(exc_info.value) == "API request failed"
 
     @patch("src.integrations.cti.local_tip.local_tip_client.LocalTipHttpClient.lookup_hash")
     def test_lookup_hash_generic_exception(self, mock_lookup):
