@@ -10,6 +10,9 @@ requests>=2.31.0
 # MISP threat intel client
 pymisp>=2.4.180
 
+# PostgreSQL client (investigation report persistence)
+psycopg2-binary>=2.9.9
+
 # MITRE ATT&CK technique mapping (official STIX corpus library)
 mitreattack-python>=4.0.0
 

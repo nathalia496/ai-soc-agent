@@ -168,6 +168,21 @@ class EngConfig:
 
 
 @dataclass
+class PostgresConfig:
+    """
+    Configuration for the PostgreSQL persistence layer (investigation reports).
+
+    Defaults match the `postgres` service in docker-compose.yml.
+    """
+
+    host: str = "localhost"
+    port: int = 5432
+    database: str = "soc_copilot"
+    user: str = "soc_user"
+    password: str = "soc_password"
+
+
+@dataclass
 class LoggingConfig:
     """
     Logging-related configuration.
@@ -203,6 +218,7 @@ class SamiConfig:
     misp: Optional[MISPConfig] = None
     ollama: Optional[OllamaConfig] = None
     eng: Optional[EngConfig] = None
+    postgres: Optional[PostgresConfig] = None
     logging: Optional[LoggingConfig] = None
     web: Optional[WebConfig] = None
 

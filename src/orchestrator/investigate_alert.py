@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 
 from ..core.errors import IntegrationError
 from ..core.logging import get_logger
-from . import tools_attack, tools_case, tools_cti, tools_llm, tools_siem
+from . import tools_attack, tools_case, tools_cti, tools_llm, tools_siem, tools_storage
 
 logger = get_logger("sami.orchestrator.investigate_alert")
 
@@ -43,6 +43,7 @@ def investigate_alert(
     llm_client: Any = None,
     case_client: Any = None,
     case_id: Optional[str] = None,
+    storage_client: Any = None,
     minutes_before: int = 30,
     minutes_after: int = 30,
     attack_top_n: int = 5,
@@ -72,6 +73,9 @@ def investigate_alert(
         case_id: Case to attach the report to as a comment. The alert and the
             case are different ID spaces (SIEM vs. case management), so this
             must be passed explicitly rather than inferred from alert_id.
+        storage_client: Storage client (e.g. PostgresClient). Optional - if
+            given, the generated report is persisted so it can be looked up
+            later via get_investigation_report/list_investigation_reports.
         minutes_before: Minutes before the alert's timestamp to search for
             nearby logs.
         minutes_after: Minutes after the alert's timestamp to search for
@@ -81,9 +85,9 @@ def investigate_alert(
 
     Returns:
         Dictionary with the final report plus every intermediate artifact
-        (alert, logs, CTI results, ATT&CK matches, case comment result) and
-        a list of non-fatal warnings encountered along the way, for
-        auditability.
+        (alert, logs, CTI results, ATT&CK matches, case comment result,
+        stored report record) and a list of non-fatal warnings encountered
+        along the way, for auditability.
 
     Raises:
         IntegrationError: If siem_client/llm_client are missing, the alert
@@ -141,7 +145,22 @@ def investigate_alert(
     report_context = _build_summary_text(alert, logs_result, cti_results, attack_matches)
     report = tools_llm.generate_investigation_report(context=report_context, client=llm_client)["report"]
 
-    # 7. Optionally attach the report to a case for human review. Never any
+    # 7. Optionally persist the report for later retrieval (best-effort).
+    stored_report = None
+    if storage_client is not None:
+        try:
+            stored_report = tools_storage.save_investigation_report(
+                alert_id=alert_id,
+                case_id=case_id,
+                report=report,
+                warnings=warnings,
+                client=storage_client,
+            )
+        except Exception as e:
+            logger.warning(f"Failed to persist investigation report for alert {alert_id}: {e}")
+            warnings.append(f"Failed to persist investigation report: {e}")
+
+    # 8. Optionally attach the report to a case for human review. Never any
     # containment/remediation tool call - investigation-only, by design.
     case_comment_result = None
     if case_client is not None and case_id is not None:
@@ -166,6 +185,7 @@ def investigate_alert(
         "cti_results": cti_results,
         "attack_matches": attack_matches,
         "report": report,
+        "stored_report": stored_report,
         "case_comment": case_comment_result,
         "warnings": warnings,
     }
