@@ -46,6 +46,7 @@ from ..integrations.eng.trello.trello_client import TrelloClient
 from ..integrations.kb import FileSystemKBClient
 from ..integrations.llm.ollama_client import OllamaClient
 from ..integrations.siem.elastic.elastic_client import ElasticSIEMClient
+from ..integrations.storage.postgres_client import PostgresClient
 from ..orchestrator import (
     investigate_alert as investigate_alert_module,
 )
@@ -58,6 +59,7 @@ from ..orchestrator import (
     tools_kb,
     tools_llm,
     tools_siem,
+    tools_storage,
 )
 from .agent_profiles import AgentProfileManager
 from .rules_engine import RulesEngine
@@ -169,6 +171,7 @@ class SamiGPTMCPServer:
         eng_client: Optional[Union[TrelloClient, ClickUpClient, GitHubClient]] = None,
         attack_mapper: Optional[AttackMapper] = None,
         ollama_client: Optional[OllamaClient] = None,
+        storage_client: Optional[PostgresClient] = None,
     ):
         """
         Initialize the MCP server.
@@ -183,6 +186,7 @@ class SamiGPTMCPServer:
             attack_mapper: MITRE ATT&CK technique mapper. Defaults to a locally
                 bundled dataset, so no config is required.
             ollama_client: Ollama report-generation client.
+            storage_client: Storage client for persisted investigation reports.
         """
         self.case_client = case_client
         self.siem_client = siem_client
@@ -200,6 +204,7 @@ class SamiGPTMCPServer:
         self.eng_client = eng_client
         self.attack_mapper = attack_mapper
         self.ollama_client = ollama_client
+        self.storage_client = storage_client
         self.rules_engine = RulesEngine(
             case_client=case_client,
             siem_client=siem_client,
@@ -240,6 +245,8 @@ class SamiGPTMCPServer:
         self._register_llm_tools()
         # End-to-end alert investigation pipeline
         self._register_investigation_tools()
+        # Investigation report storage (PostgreSQL)
+        self._register_storage_tools()
 
     def _register_kb_tools(self) -> None:
         """
@@ -2111,6 +2118,65 @@ class SamiGPTMCPServer:
             },
         }
 
+    def _register_storage_tools(self) -> None:
+        """
+        Register persistence tools for investigation reports.
+
+        Available tools:
+        - get_investigation_report: Retrieve a previously generated and
+          persisted investigation report by its stored id.
+        - list_investigation_reports: List previously persisted investigation
+          reports, most recent first.
+
+        Requires a PostgreSQL storage client (configure 'postgres' in
+        config.json to enable these tools).
+        """
+        if not self.storage_client:
+            self._mcp_logger.warning(
+                "Storage tools not registered: No storage client configured. "
+                "Configure 'postgres' in config.json to enable them."
+            )
+            return
+
+        self._mcp_logger.info(
+            "Registering 2 storage tools (get_investigation_report, list_investigation_reports)"
+        )
+
+        self.tools["get_investigation_report"] = {
+            "name": "get_investigation_report",
+            "description": (
+                "Retrieve a previously generated investigation report (produced by investigate_alert "
+                "and persisted to storage) by its stored report id."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "report_id": {
+                        "type": "integer",
+                        "description": "The stored report's id.",
+                    }
+                },
+                "required": ["report_id"],
+            },
+        }
+
+        self.tools["list_investigation_reports"] = {
+            "name": "list_investigation_reports",
+            "description": (
+                "List previously generated and persisted investigation reports, most recent first."
+            ),
+            "inputSchema": {
+                "type": "object",
+                "properties": {
+                    "limit": {
+                        "type": "integer",
+                        "description": "Maximum number of reports to return.",
+                        "default": 50,
+                    }
+                },
+            },
+        }
+
     def _register_rules_tools(self) -> None:
         """
         Register rules engine tools.
@@ -3572,8 +3638,25 @@ To be populated during investigation.
                 llm_client=self.ollama_client,
                 case_client=self.case_client,
                 case_id=args.get("case_id"),
+                storage_client=self.storage_client,
                 minutes_before=args.get("minutes_before", 30),
                 minutes_after=args.get("minutes_after", 30),
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
+
+        # Investigation report storage tools
+        elif tool_name == "get_investigation_report" and self.storage_client:
+            result = tools_storage.get_investigation_report(
+                report_id=args["report_id"],
+                client=self.storage_client,
+            )
+            self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
+            return result
+        elif tool_name == "list_investigation_reports" and self.storage_client:
+            result = tools_storage.list_investigation_reports(
+                limit=args.get("limit", 50),
+                client=self.storage_client,
             )
             self._mcp_logger.debug(f"Tool {tool_name} completed successfully")
             return result
@@ -3906,7 +3989,8 @@ async def main() -> None:
     mcp_logger.info(f"  Elastic configured: {config.elastic is not None}")
     mcp_logger.info(f"  EDR configured: {config.edr is not None}")
     mcp_logger.info(f"  CTI configured: {config.cti is not None}")
-    
+    mcp_logger.info(f"  Postgres configured: {config.postgres is not None}")
+
     # Prioritize IRIS if both are configured
     if config.iris:
         try:
@@ -4105,6 +4189,23 @@ async def main() -> None:
             logger.error(f"Failed to initialize Ollama client: {e}")
             mcp_logger.error(f"✗ Failed to initialize Ollama client: {e}", exc_info=True)
 
+    # Initialize PostgreSQL storage client (investigation report persistence)
+    storage_client = None
+    if config.postgres:
+        try:
+            mcp_logger.info("Attempting to initialize PostgreSQL storage client...")
+            storage_client = PostgresClient.from_config(config)
+            storage_client.ensure_table()
+            logger.info("PostgreSQL storage client initialized")
+            mcp_logger.info("✓ PostgreSQL storage client initialized successfully")
+            mcp_logger.info(
+                f"    Postgres: {config.postgres.host}:{config.postgres.port}/{config.postgres.database}"
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize PostgreSQL storage client: {e}")
+            mcp_logger.error(f"✗ Failed to initialize PostgreSQL storage client: {e}", exc_info=True)
+            storage_client = None
+
     # Initialize Engineering client (Trello, ClickUp, or GitHub)
     eng_client = None
     if config.eng:
@@ -4172,6 +4273,7 @@ async def main() -> None:
         eng_client=eng_client,
         attack_mapper=attack_mapper,
         ollama_client=ollama_client,
+        storage_client=storage_client,
     )
 
     # Log tool registration summary
@@ -4196,6 +4298,7 @@ async def main() -> None:
             eng_provider = "Trello"
     mcp_logger.info(f"  Engineering ({eng_provider}): {'✓ Configured' if eng_client else '✗ Not configured (2 tools unavailable)'}")
     mcp_logger.info(f"  Ollama (LLM reports): {'✓ Configured' if ollama_client else '✗ Not configured (1 tool unavailable)'}")
+    mcp_logger.info(f"  Storage (Postgres): {'✓ Configured' if storage_client else '✗ Not configured (2 tools unavailable)'}")
     mcp_logger.info("  Rules Engine: ✓ Always available (2 tools)")
     mcp_logger.info("=" * 80)
     

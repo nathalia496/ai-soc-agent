@@ -24,6 +24,7 @@ from .config import (
     LoggingConfig,
     MISPConfig,
     OllamaConfig,
+    PostgresConfig,
     SamiConfig,
     TheHiveConfig,
     TrelloConfig,
@@ -102,6 +103,15 @@ def _config_to_dict(config: SamiConfig) -> Dict[str, Any]:
             "base_url": config.ollama.base_url,
             "model": config.ollama.model,
             "timeout_seconds": config.ollama.timeout_seconds,
+        }
+
+    if config.postgres:
+        result["postgres"] = {
+            "host": config.postgres.host,
+            "port": config.postgres.port,
+            "database": config.postgres.database,
+            "user": config.postgres.user,
+            "password": config.postgres.password,
         }
 
     if config.eng:
@@ -231,6 +241,17 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
             timeout_seconds=ollama_data.get("timeout_seconds", 60),
         )
 
+    postgres_cfg: Optional[PostgresConfig] = None
+    if "postgres" in data and data["postgres"]:
+        pg_data = data["postgres"]
+        postgres_cfg = PostgresConfig(
+            host=pg_data.get("host", "localhost"),
+            port=pg_data.get("port", 5432),
+            database=pg_data.get("database", "soc_copilot"),
+            user=pg_data.get("user", "soc_user"),
+            password=pg_data.get("password", "soc_password"),
+        )
+
     eng_cfg: Optional[EngConfig] = None
     if "eng" in data and data["eng"]:
         eng_data = data["eng"]
@@ -291,6 +312,7 @@ def _dict_to_config(data: Dict[str, Any]) -> SamiConfig:
         misp=misp_cfg,
         ollama=ollama_cfg,
         eng=eng_cfg,
+        postgres=postgres_cfg,
         logging=logging_cfg,
     )
 

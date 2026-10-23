@@ -151,7 +151,12 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
    pip install -r requirements.txt
    ```
 
-4. **Configure integrations** (see Configuration section below)
+4. **Start PostgreSQL** (used to persist investigation reports):
+   ```bash
+   docker compose up -d postgres
+   ```
+
+5. **Configure integrations** (see Configuration section below)
 
 ### Connect MCP Server to AI Tools
 
@@ -243,6 +248,7 @@ See `config.json.example` for the complete configuration schema. Key sections:
 - `edr`: EDR platform configuration
 - `cti`: Threat intelligence configuration
 - `eng`: Engineering board configuration (ClickUp, Trello, GitHub)
+- `postgres`: PostgreSQL connection settings for persisting investigation reports (defaults match `docker-compose.yml`)
 - `ai_controller`: AI controller web interface settings
 - `logging`: Logging configuration
 
