@@ -24,9 +24,30 @@ For detailed documentation and presentation materials:
 
 ### Quick Start
 
-SamiGPT can be used in two ways:
+git add README.md
+git commit -m "docs: document MCP Server as the primary path, AI Controller as optional"SamiGPT is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the note under "Optional" below before reaching for it.
 
-#### Method 1: AI Controller (Web Interface)
+#### Recommended: MCP Server (Direct Integration)
+
+Use the MCP server directly to connect SamiGPT tools to Claude Desktop, Cursor, or any other MCP-compatible client. No paid tooling required - everything runs locally.
+
+**Steps:**
+
+1. **Activate virtual environment:**
+   ```bash
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+2. **Start the MCP server:**
+   ```bash
+   python -m src.mcp.mcp_server
+   ```
+
+3. **Configure your AI tool** (see "Connect MCP Server to AI Tools" section below for detailed instructions)
+
+#### Optional: AI Controller (Web Interface)
+
+> **Not part of the project's core scope.** The AI Controller is a web dashboard inherited from this project's original demo. It doesn't run its own AI - it shells out to the Cursor IDE's `cursor-agent` binary (see `src/ai_controller/agent_executor.py`), a paid, proprietary tool. Using it means every investigation depends on that external dependency, which is at odds with this project's free/local design goal. It's kept here for continuity, but new work should go through the MCP Server above; `investigate_alert()` and the rest of the project's core tools are only reachable that way.
 
 The AI Controller provides a web-based interface and uses the Cursor IDE `cursor-agent` binary for command execution.
 
@@ -52,26 +73,6 @@ The AI Controller provides a web-based interface and uses the Cursor IDE `cursor
 
 3. **Open your browser:**
    Navigate to `http://127.0.0.1:8081` to access the web interface.
-
-#### Method 2: MCP Server (Direct Integration)
-
-Use the MCP server directly to connect SamiGPT tools to Cursor, Claude Desktop, or other MCP-compatible tools.
-
-**Steps:**
-
-1. **Activate virtual environment:**
-   ```bash
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. **Start the MCP server:**
-   ```bash
-   python -m src.mcp.mcp_server
-   ```
-
-3. **Configure your AI tool** (see "Connect MCP Server to AI Tools" section below for detailed instructions)
-
-**Note:** The MCP server method doesn't require the Cursor IDE `cursor-agent` binary - it works directly with any MCP-compatible tool.
 
 ## Overview
 
@@ -160,7 +161,7 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
 
 ### Connect MCP Server to AI Tools
 
-If you're using **Method 2: MCP Server** (see Quick Start above), configure your AI tool to connect to the MCP server:
+If you're using the **MCP Server** (see Quick Start above), configure your AI tool to connect to the MCP server:
 
 #### Cursor Integration
 
