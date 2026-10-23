@@ -256,6 +256,57 @@ class TestBestEffortDegradation:
         assert result["case_comment"] is None
         assert any("Failed to attach report to case" in w for w in result["warnings"])
 
+    def test_storage_client_persists_report(self):
+        alert = _make_alert([])
+        siem_client = _make_siem_client(alert)
+        llm_client = Mock()
+        llm_client.generate_report.return_value = VALID_REPORT
+        storage_client = Mock()
+        storage_client.save_report.return_value = {
+            "id": 1, "alert_id": "alert-1", "case_id": "case-1", "created_at": "t",
+        }
+
+        result = investigate_alert(
+            "alert-1", siem_client=siem_client, llm_client=llm_client,
+            storage_client=storage_client, case_id="case-1",
+        )
+
+        assert result["success"] is True
+        assert result["stored_report"]["id"] == 1
+        storage_client.save_report.assert_called_once()
+        call_kwargs = storage_client.save_report.call_args.kwargs
+        assert call_kwargs["alert_id"] == "alert-1"
+        assert call_kwargs["case_id"] == "case-1"
+        assert call_kwargs["report"] == VALID_REPORT
+
+    def test_storage_failure_is_non_fatal(self):
+        alert = _make_alert([])
+        siem_client = _make_siem_client(alert)
+        llm_client = Mock()
+        llm_client.generate_report.return_value = VALID_REPORT
+        storage_client = Mock()
+        storage_client.save_report.side_effect = RuntimeError("database down")
+
+        result = investigate_alert(
+            "alert-1", siem_client=siem_client, llm_client=llm_client,
+            storage_client=storage_client,
+        )
+
+        assert result["success"] is True
+        assert result["report"] == VALID_REPORT
+        assert result["stored_report"] is None
+        assert any("Failed to persist investigation report" in w for w in result["warnings"])
+
+    def test_no_storage_client_leaves_stored_report_none(self):
+        alert = _make_alert([])
+        siem_client = _make_siem_client(alert)
+        llm_client = Mock()
+        llm_client.generate_report.return_value = VALID_REPORT
+
+        result = investigate_alert("alert-1", siem_client=siem_client, llm_client=llm_client)
+
+        assert result["stored_report"] is None
+
 
 @pytest.fixture(scope="module")
 def real_attack_mapper():

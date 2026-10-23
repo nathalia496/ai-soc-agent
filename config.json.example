@@ -56,6 +56,14 @@
     "model": "llama3.1",
     "timeout_seconds": 60
   },
+  "postgres": {
+    "_comment": "Optional: PostgreSQL persistence for investigation reports. Defaults below target the local postgres container from docker-compose.yml.",
+    "host": "localhost",
+    "port": 5432,
+    "database": "soc_copilot",
+    "user": "soc_user",
+    "password": "soc_password"
+  },
   "ai_controller": {
     "_comment": "AI Controller configuration for managing agent executions",
     "storage_dir": "data/ai_controller",
