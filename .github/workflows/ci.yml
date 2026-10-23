@@ -11,6 +11,14 @@ jobs:
   test:
     name: Tests
     runs-on: ubuntu-latest
+    # Explicit, least-privilege permissions for this job's GITHUB_TOKEN:
+    # contents:read to check out the repo, checks:write so the coverage step
+    # below can create its own check run via the GitHub API. Setting this
+    # block overrides the org/repo default for this job, so both need to be
+    # listed even though only `checks` is new.
+    permissions:
+      contents: read
+      checks: write
 
     steps:
       - name: Check out code
@@ -47,8 +55,50 @@ jobs:
           path: data/attack
           key: attack-dataset-v1
 
-      - name: Run test suite
-        run: pytest tests/ -v
+      - name: Run test suite with coverage
+        # Informational only (no --cov-fail-under): the codebase is at ~16%
+        # coverage today, so enforcing a minimum now would just make every PR
+        # red regardless of what changed - same trap as the pre-existing test
+        # failures and the first ruff pass. This makes the number visible so
+        # it can be tracked over time; revisit enforcing a threshold (ideally
+        # on changed lines only, not the whole repo) once it's being watched.
+        run: pytest tests/ -v --cov=src --cov-report=term-missing
+
+      - name: Publish coverage as its own check
+        # Creates a standalone "Coverage" entry in the PR's checks list (like
+        # `coverage/js` in other stacks) with the % visible right in the
+        # check's title, via the GitHub Checks API. Uses actions/github-script
+        # (official, GitHub-maintained, already trusted the same as
+        # actions/checkout) instead of a third-party coverage service like
+        # Codecov: Codecov's own uploader was compromised in a real
+        # supply-chain incident in 2021 (it exfiltrated CI secrets for
+        # months before being caught), and this project should not be adding
+        # that class of external dependency to its own CI just to render a
+        # number. Informational only: conclusion is always "success", so it
+        # never blocks merging on its own. Runs even if tests failed, so
+        # coverage is still visible on a red run.
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { execSync } = require("child_process");
+            const total = execSync("coverage report --format=total").toString().trim();
+            const table = execSync("coverage report --format=markdown").toString().trim();
+            const headSha = context.payload.pull_request?.head.sha ?? context.sha;
+
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: "Coverage",
+              head_sha: headSha,
+              status: "completed",
+              conclusion: "success",
+              output: {
+                title: `${total}% statement coverage`,
+                summary: `**Total: ${total}%** of statements in \`src/\` are covered by tests.\n\n` +
+                  `<details><summary>Per-file breakdown</summary>\n\n${table}\n\n</details>`,
+              },
+            });
 
   lint:
     name: Lint (ruff)
