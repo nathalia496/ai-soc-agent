@@ -1,6 +1,6 @@
-# SamiGPT MCP Tools Documentation
+# AttackLens MCP Tools Documentation
 
-This document provides comprehensive documentation for all tools available in the SamiGPT MCP server. These tools enable AI assistants and automation systems to interact with case management systems, SIEM platforms, and EDR solutions for security incident response and investigation.
+This document provides comprehensive documentation for all tools available in the AttackLens MCP server. These tools enable AI assistants and automation systems to interact with case management systems, SIEM platforms, and EDR solutions for security incident response and investigation.
 
 ## Naming Conventions
 
@@ -476,7 +476,7 @@ Add an event to a case timeline for tracking investigation activities and milest
 - `case_id` (string, required): The ID of the case
 - `title` (string, required): Event title
 - `content` (string, required): Event content/description
-- `source` (string, optional): Event source (e.g., "SamiGPT", "SIEM", "EDR")
+- `source` (string, optional): Event source (e.g., "AttackLens", "SIEM", "EDR")
 - `category_id` (integer, optional): Event category ID
 - `tags` (array, optional): Event tags
 - `color` (string, optional): Event color (hex format, e.g., "#1572E899")
@@ -504,7 +504,7 @@ Add an event to a case timeline for tracking investigation activities and milest
     "case_id": "CASE-2024-001",
     "title": "Endpoint Isolated",
     "content": "Endpoint 10.10.1.2 was isolated from the network due to malware detection",
-    "source": "SamiGPT",
+    "source": "AttackLens",
     "tags": ["containment", "response"]
   }
 }
@@ -2991,5 +2991,5 @@ Add a note or comment to a security alert in the SIEM platform. Use this to docu
 
 ## Support
 
-For issues, questions, or feature requests related to these tools, please refer to the main SamiGPT documentation or contact your system administrator.
+For issues, questions, or feature requests related to these tools, please refer to the main AttackLens documentation or contact your system administrator.
 

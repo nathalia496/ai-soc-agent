@@ -3,11 +3,11 @@ CLI entry point for cursor-agent command.
 
 This acts as a wrapper that:
 - Passes commands directly to Cursor IDE's cursor-agent binary
-- Handles --web flag to start the SamiGPT AI Controller web interface
+- Handles --web flag to start the AttackLens AI Controller web interface
 
 Usage:
     cursor-agent "your prompt"  # Passes to Cursor IDE cursor-agent
-    cursor-agent --web  # Start SamiGPT AI Controller web server
+    cursor-agent --web  # Start AttackLens AI Controller web server
     cursor-agent --help  # Shows Cursor IDE help
 """
 
@@ -167,7 +167,7 @@ def main():
     if "--web" in sys.argv:
         # Handle web server mode
         parser = argparse.ArgumentParser(
-            description="SamiGPT AI Controller Web Server",
+            description="AttackLens AI Controller Web Server",
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         
@@ -226,7 +226,7 @@ def main():
         # Initialize server
         initialize(config_storage_dir=storage_dir, debug_ui=args.debug)
         
-        print(f"Starting SamiGPT AI Controller on http://{web_host}:{web_port}")
+        print(f"Starting AttackLens AI Controller on http://{web_host}:{web_port}")
         print("Press Ctrl+C to stop")
         
         uvicorn.run(app, host=web_host, port=web_port, log_level="info")

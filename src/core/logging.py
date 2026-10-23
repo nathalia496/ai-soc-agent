@@ -1,5 +1,5 @@
 """
-Shared logging configuration for SamiGPT.
+Shared logging configuration for AttackLens.
 
 This module centralizes logging setup so that all components
 (core, API layer, integrations, orchestrator, web API) can

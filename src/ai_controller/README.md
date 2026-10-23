@@ -1,6 +1,6 @@
 # AI Controller
 
-Web-based controller for managing and executing SamiGPT agent commands.
+Web-based controller for managing and executing AttackLens agent commands.
 
 ## Setup
 
@@ -24,7 +24,7 @@ export PATH="venv/bin:$PATH"
 cursor-agent "your prompt"
 ```
 
-**Note:** For the SamiGPT AI Controller web interface, use `python cursor_agent.py --web` (not the wrapper).
+**Note:** For the AttackLens AI Controller web interface, use `python cursor_agent.py --web` (not the wrapper).
 
 ## Features
 

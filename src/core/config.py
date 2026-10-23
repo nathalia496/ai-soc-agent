@@ -1,5 +1,5 @@
 """
-Configuration models and loading logic for SamiGPT.
+Configuration models and loading logic for AttackLens.
 
 The goal of this module is to provide a single place where runtime
 configuration (API URLs, auth tokens, timeouts, logging settings, etc.)
@@ -205,7 +205,7 @@ class WebConfig:
 @dataclass
 class SamiConfig:
     """
-    Top-level configuration for SamiGPT.
+    Top-level configuration for AttackLens.
 
     Additional sections (for SIEM, EDR, etc.) can be added here later.
     """
@@ -236,47 +236,47 @@ def _require_env(name: str) -> str:
 
 def load_config() -> SamiConfig:
     """
-    Load SamiGPT configuration from environment variables.
+    Load AttackLens configuration from environment variables.
 
     Environment variables:
-        SAMIGPT_THEHIVE_URL: Base URL for TheHive (required if TheHive is used).
-        SAMIGPT_THEHIVE_API_KEY: API key/token for TheHive.
-        SAMIGPT_THEHIVE_TIMEOUT_SECONDS: Request timeout for TheHive (default: 30).
+        ATTACKLENS_THEHIVE_URL: Base URL for TheHive (required if TheHive is used).
+        ATTACKLENS_THEHIVE_API_KEY: API key/token for TheHive.
+        ATTACKLENS_THEHIVE_TIMEOUT_SECONDS: Request timeout for TheHive (default: 30).
 
-        SAMIGPT_LOG_DIR: Directory for log files (default: "logs").
-        SAMIGPT_LOG_LEVEL: Root log level (default: "INFO").
+        ATTACKLENS_LOG_DIR: Directory for log files (default: "logs").
+        ATTACKLENS_LOG_LEVEL: Root log level (default: "INFO").
 
     If TheHive variables are not set, the configuration will still be returned
     with `thehive` set to None, allowing you to run without that integration.
     """
 
     # Logging config
-    log_dir = os.getenv("SAMIGPT_LOG_DIR", "logs")
-    log_level = os.getenv("SAMIGPT_LOG_LEVEL", "INFO")
+    log_dir = os.getenv("ATTACKLENS_LOG_DIR", "logs")
+    log_level = os.getenv("ATTACKLENS_LOG_LEVEL", "INFO")
     logging_cfg = LoggingConfig(log_dir=log_dir, log_level=log_level)
 
     # TheHive config (optional but recommended). If one of the key vars is set,
     # we require the others to avoid a half-configured integration.
-    thehive_url = os.getenv("SAMIGPT_THEHIVE_URL")
-    thehive_api_key = os.getenv("SAMIGPT_THEHIVE_API_KEY")
-    thehive_timeout_raw = os.getenv("SAMIGPT_THEHIVE_TIMEOUT_SECONDS", "30")
+    thehive_url = os.getenv("ATTACKLENS_THEHIVE_URL")
+    thehive_api_key = os.getenv("ATTACKLENS_THEHIVE_API_KEY")
+    thehive_timeout_raw = os.getenv("ATTACKLENS_THEHIVE_TIMEOUT_SECONDS", "30")
 
     thehive_cfg: Optional[TheHiveConfig]
     if thehive_url or thehive_api_key:
         # If any TheHive-related env var is set, treat TheHive as enabled
         if not thehive_url:
             raise ConfigError(
-                "SAMIGPT_THEHIVE_URL must be set when SAMIGPT_THEHIVE_API_KEY is provided"
+                "ATTACKLENS_THEHIVE_URL must be set when ATTACKLENS_THEHIVE_API_KEY is provided"
             )
         if not thehive_api_key:
             raise ConfigError(
-                "SAMIGPT_THEHIVE_API_KEY must be set when SAMIGPT_THEHIVE_URL is provided"
+                "ATTACKLENS_THEHIVE_API_KEY must be set when ATTACKLENS_THEHIVE_URL is provided"
             )
         try:
             timeout_seconds = int(thehive_timeout_raw)
         except ValueError as exc:
             raise ConfigError(
-                "SAMIGPT_THEHIVE_TIMEOUT_SECONDS must be an integer"
+                "ATTACKLENS_THEHIVE_TIMEOUT_SECONDS must be an integer"
             ) from exc
 
         thehive_cfg = TheHiveConfig(

@@ -1480,7 +1480,7 @@ class ElasticSIEMClient:
                 new_note = {
                     "timestamp": datetime.utcnow().isoformat() + "Z",
                     "comment": comment,
-                    "author": "sami-gpt",
+                    "author": "attack-lens",
                 }
                 existing_comments.append(new_note)
                 
@@ -1641,7 +1641,7 @@ class ElasticSIEMClient:
                 new_note = {
                     "timestamp": datetime.utcnow().isoformat() + "Z",
                     "comment": comment,
-                    "author": "sami-gpt",
+                    "author": "attack-lens",
                 }
                 existing_comments.append(new_note)
                 
@@ -1884,7 +1884,7 @@ class ElasticSIEMClient:
             new_note = {
                 "timestamp": datetime.utcnow().isoformat() + "Z",
                 "comment": note,
-                "author": "sami-gpt",
+                "author": "attack-lens",
             }
             unique_comments.append(new_note)
             

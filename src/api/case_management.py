@@ -1,5 +1,5 @@
 """
-Generic case management API for SamiGPT.
+Generic case management API for AttackLens.
 
 This module defines vendor-neutral DTOs and the ``CaseManagementClient``
 interface that orchestrator code and LLM tools will use. Concrete

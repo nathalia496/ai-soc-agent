@@ -1,5 +1,5 @@
 """
-Core utilities for SamiGPT.
+Core utilities for AttackLens.
 
 This package holds:
 - configuration loading (`config.py`)

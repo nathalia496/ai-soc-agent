@@ -1,5 +1,5 @@
 """
-High-level incident response workflows for SamiGPT.
+High-level incident response workflows for AttackLens.
 
 This module provides orchestration functions that coordinate between
 case management, SIEM, and EDR clients to perform common incident

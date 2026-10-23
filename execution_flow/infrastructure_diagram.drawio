@@ -1,10 +1,10 @@
 <mxfile host="app.diagrams.net" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36" version="29.2.1">
-  <diagram name="SamiGPT Infrastructure" id="infrastructure">
+  <diagram name="AttackLens Infrastructure" id="infrastructure">
     <mxGraphModel dx="1395" dy="1627" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="1400" pageHeight="900" background="light-dark(#FFFFFF,#FFFFFF)" math="0" shadow="0">
       <root>
         <mxCell id="0" />
         <mxCell id="1" parent="0" />
-        <mxCell id="mcp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#DAE8FC,#4D4D4D);strokeColor=light-dark(#6C8EBF,#FFFFFF);fontStyle=0;fontSize=14;verticalAlign=top;align=center;strokeWidth=2;fontColor=light-dark(#000000,#FFFFFF);" value="MCP Server&#xa;(SamiGPT)&#xa;&#xa;Model Context Protocol Server&#xa;Exposes investigation tools&#xa;to LLM clients" vertex="1">
+        <mxCell id="mcp" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#DAE8FC,#4D4D4D);strokeColor=light-dark(#6C8EBF,#FFFFFF);fontStyle=0;fontSize=14;verticalAlign=top;align=center;strokeWidth=2;fontColor=light-dark(#000000,#FFFFFF);" value="MCP Server&#xa;(AttackLens)&#xa;&#xa;Model Context Protocol Server&#xa;Exposes investigation tools&#xa;to LLM clients" vertex="1">
           <mxGeometry height="226" width="280" x="560" y="500" as="geometry" />
         </mxCell>
         <mxCell id="iris" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#FFF2CC,#9C9C9C);strokeColor=light-dark(#D6B656,#FFFFFF);fontSize=14;verticalAlign=top;align=center;strokeWidth=2;fontColor=light-dark(#000000,#FFFFFF);" value="IRIS&#xa;Case Management&#xa;&#xa;Incident Response Platform&#xa;Case creation &amp;amp; tracking&#xa;Observables &amp;amp; timeline" vertex="1">
@@ -112,7 +112,7 @@
         <mxCell id="jCDsDg6ZyGLuZemMPv5o-36" edge="1" parent="1" source="jCDsDg6ZyGLuZemMPv5o-35" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;strokeWidth=2;strokeColor=light-dark(#000000,#000000);" target="mcp">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="jCDsDg6ZyGLuZemMPv5o-35" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#FFF2CC,#9C9C9C);strokeColor=light-dark(#D6B656,#FFFFFF);fontSize=14;verticalAlign=top;align=center;strokeWidth=2;fontColor=light-dark(#000000,#FFFFFF);" value="&lt;div&gt;AI Controller&lt;/div&gt;&lt;div&gt;Web and CLI interface for executing SamiGPT agent commands. Provides session management, real-time execution monitoring, and autorun support for scheduled tasks through a web UI.&lt;/div&gt;" vertex="1">
+        <mxCell id="jCDsDg6ZyGLuZemMPv5o-35" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=light-dark(#FFF2CC,#9C9C9C);strokeColor=light-dark(#D6B656,#FFFFFF);fontSize=14;verticalAlign=top;align=center;strokeWidth=2;fontColor=light-dark(#000000,#FFFFFF);" value="&lt;div&gt;AI Controller&lt;/div&gt;&lt;div&gt;Web and CLI interface for executing AttackLens agent commands. Provides session management, real-time execution monitoring, and autorun support for scheduled tasks through a web UI.&lt;/div&gt;" vertex="1">
           <mxGeometry height="225" width="278" x="561" y="204" as="geometry" />
         </mxCell>
         <mxCell id="jCDsDg6ZyGLuZemMPv5o-37" parent="1" style="image;aspect=fixed;perimeter=ellipsePerimeter;html=1;align=center;shadow=0;dashed=0;spacingTop=3;image=img/lib/active_directory/web_server.svg;" value="" vertex="1">

@@ -1,5 +1,5 @@
 """
-Core error types for SamiGPT.
+Core error types for AttackLens.
 
 These exceptions provide a common base for all raised errors across the
 project so that callers (including the orchestrator and web API) can handle
@@ -11,7 +11,7 @@ from __future__ import annotations
 
 class SamiError(Exception):
     """
-    Base exception for all SamiGPT-specific errors.
+    Base exception for all AttackLens-specific errors.
     """
 
 

@@ -1,4 +1,4 @@
-"""SIEM integrations for SamiGPT."""
+"""SIEM integrations for AttackLens."""
 
 from .elastic.elastic_client import ElasticSIEMClient
 

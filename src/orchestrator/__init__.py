@@ -1,5 +1,5 @@
 """
-Orchestrator and LLM tools for SamiGPT.
+Orchestrator and LLM tools for AttackLens.
 
 This package contains:
 - ``incident_workflow.py``: High-level workflows that coordinate between

@@ -999,7 +999,7 @@ def add_case_timeline_event(
       - case_id (str, required): The ID of the case
       - title (str, required): Event title
       - content (str, required): Event content/description
-      - source (str, optional): Event source (e.g., "SamiGPT", "SIEM", "EDR")
+      - source (str, optional): Event source (e.g., "AttackLens", "SIEM", "EDR")
       - category_id (int, optional): Event category ID
       - tags (list[str], optional): Event tags
       - color (str, optional): Event color (hex format, e.g., "#1572E899")

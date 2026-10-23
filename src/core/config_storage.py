@@ -1,5 +1,5 @@
 """
-Configuration storage and loading for SamiGPT.
+Configuration storage and loading for AttackLens.
 
 This module provides functions to save and load configuration from both JSON and .env files,
 allowing the web UI to manage configurations and supporting manual file editing.
@@ -31,9 +31,9 @@ from .config import (
 )
 from .errors import ConfigError
 
-CONFIG_FILE = os.getenv("SAMIGPT_CONFIG_FILE", "config.json")
-ENV_FILE = os.getenv("SAMIGPT_ENV_FILE", ".env")
-STARTING_CONFIG_FILE = os.getenv("SAMIGPT_STARTING_CONFIG_FILE", "config.json.example")
+CONFIG_FILE = os.getenv("ATTACKLENS_CONFIG_FILE", "config.json")
+ENV_FILE = os.getenv("ATTACKLENS_ENV_FILE", ".env")
+STARTING_CONFIG_FILE = os.getenv("ATTACKLENS_STARTING_CONFIG_FILE", "config.json.example")
 
 
 def _config_to_dict(config: SamiConfig) -> Dict[str, Any]:
@@ -362,15 +362,15 @@ def load_config_from_env_file(env_path: str = ENV_FILE) -> Dict[str, Any]:
 def _env_dict_to_config(env_dict: Dict[str, Any]) -> SamiConfig:
     """Convert .env dictionary to SamiConfig."""
     logging_cfg = LoggingConfig(
-        log_dir=env_dict.get("SAMIGPT_LOG_DIR", "logs"),
-        log_level=env_dict.get("SAMIGPT_LOG_LEVEL", "INFO"),
+        log_dir=env_dict.get("ATTACKLENS_LOG_DIR", "logs"),
+        log_level=env_dict.get("ATTACKLENS_LOG_LEVEL", "INFO"),
     )
 
     thehive_cfg: Optional[TheHiveConfig] = None
-    thehive_url = env_dict.get("SAMIGPT_THEHIVE_URL")
-    thehive_api_key = env_dict.get("SAMIGPT_THEHIVE_API_KEY")
+    thehive_url = env_dict.get("ATTACKLENS_THEHIVE_URL")
+    thehive_api_key = env_dict.get("ATTACKLENS_THEHIVE_API_KEY")
     if thehive_url and thehive_api_key:
-        timeout = int(env_dict.get("SAMIGPT_THEHIVE_TIMEOUT_SECONDS", "30"))
+        timeout = int(env_dict.get("ATTACKLENS_THEHIVE_TIMEOUT_SECONDS", "30"))
         thehive_cfg = TheHiveConfig(
             base_url=thehive_url,
             api_key=thehive_api_key,
@@ -378,11 +378,11 @@ def _env_dict_to_config(env_dict: Dict[str, Any]) -> SamiConfig:
         )
 
     iris_cfg: Optional[IrisConfig] = None
-    iris_url = env_dict.get("SAMIGPT_IRIS_URL")
-    iris_api_key = env_dict.get("SAMIGPT_IRIS_API_KEY")
+    iris_url = env_dict.get("ATTACKLENS_IRIS_URL")
+    iris_api_key = env_dict.get("ATTACKLENS_IRIS_API_KEY")
     if iris_url and iris_api_key:
-        timeout = int(env_dict.get("SAMIGPT_IRIS_TIMEOUT_SECONDS", "30"))
-        verify_ssl = env_dict.get("SAMIGPT_IRIS_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
+        timeout = int(env_dict.get("ATTACKLENS_IRIS_TIMEOUT_SECONDS", "30"))
+        verify_ssl = env_dict.get("ATTACKLENS_IRIS_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
         iris_cfg = IrisConfig(
             base_url=iris_url,
             api_key=iris_api_key,
@@ -391,28 +391,28 @@ def _env_dict_to_config(env_dict: Dict[str, Any]) -> SamiConfig:
         )
 
     elastic_cfg: Optional[ElasticConfig] = None
-    elastic_url = env_dict.get("SAMIGPT_ELASTIC_URL")
+    elastic_url = env_dict.get("ATTACKLENS_ELASTIC_URL")
     if elastic_url:
-        timeout = int(env_dict.get("SAMIGPT_ELASTIC_TIMEOUT_SECONDS", "30"))
-        verify_ssl = env_dict.get("SAMIGPT_ELASTIC_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
+        timeout = int(env_dict.get("ATTACKLENS_ELASTIC_TIMEOUT_SECONDS", "30"))
+        verify_ssl = env_dict.get("ATTACKLENS_ELASTIC_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
         elastic_cfg = ElasticConfig(
             base_url=elastic_url,
-            siem_type=env_dict.get("SAMIGPT_ELASTIC_SIEM_TYPE", "elasticsearch"),
-            api_key=env_dict.get("SAMIGPT_ELASTIC_API_KEY"),
-            username=env_dict.get("SAMIGPT_ELASTIC_USERNAME"),
-            password=env_dict.get("SAMIGPT_ELASTIC_PASSWORD"),
+            siem_type=env_dict.get("ATTACKLENS_ELASTIC_SIEM_TYPE", "elasticsearch"),
+            api_key=env_dict.get("ATTACKLENS_ELASTIC_API_KEY"),
+            username=env_dict.get("ATTACKLENS_ELASTIC_USERNAME"),
+            password=env_dict.get("ATTACKLENS_ELASTIC_PASSWORD"),
             timeout_seconds=timeout,
             verify_ssl=verify_ssl,
         )
 
     edr_cfg: Optional[EDRConfig] = None
-    edr_url = env_dict.get("SAMIGPT_EDR_URL")
-    edr_api_key = env_dict.get("SAMIGPT_EDR_API_KEY")
+    edr_url = env_dict.get("ATTACKLENS_EDR_URL")
+    edr_api_key = env_dict.get("ATTACKLENS_EDR_API_KEY")
     if edr_url and edr_api_key:
-        timeout = int(env_dict.get("SAMIGPT_EDR_TIMEOUT_SECONDS", "30"))
-        verify_ssl = env_dict.get("SAMIGPT_EDR_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
+        timeout = int(env_dict.get("ATTACKLENS_EDR_TIMEOUT_SECONDS", "30"))
+        verify_ssl = env_dict.get("ATTACKLENS_EDR_VERIFY_SSL", "true").lower() in ("true", "1", "yes")
         edr_cfg = EDRConfig(
-            edr_type=env_dict.get("SAMIGPT_EDR_TYPE", "velociraptor"),
+            edr_type=env_dict.get("ATTACKLENS_EDR_TYPE", "velociraptor"),
             base_url=edr_url,
             api_key=edr_api_key,
             timeout_seconds=timeout,
@@ -532,7 +532,7 @@ def save_config_to_env_file(config: SamiConfig, env_path: str = ENV_FILE) -> Non
         env_file.parent.mkdir(parents=True, exist_ok=True)
 
         lines = [
-            "# SamiGPT Configuration File",
+            "# AttackLens Configuration File",
             "# This file can be edited manually or via the web interface",
             "# Changes are synchronized between this file and config.json",
             "",
@@ -540,69 +540,69 @@ def save_config_to_env_file(config: SamiConfig, env_path: str = ENV_FILE) -> Non
 
         # Logging
         lines.append("# Logging Configuration")
-        lines.append(f"SAMIGPT_LOG_DIR={config.logging.log_dir}")
-        lines.append(f"SAMIGPT_LOG_LEVEL={config.logging.log_level}")
+        lines.append(f"ATTACKLENS_LOG_DIR={config.logging.log_dir}")
+        lines.append(f"ATTACKLENS_LOG_LEVEL={config.logging.log_level}")
         lines.append("")
 
         # TheHive
         if config.thehive:
             lines.append("# TheHive Case Management")
-            lines.append(f"SAMIGPT_THEHIVE_URL={config.thehive.base_url}")
-            lines.append(f'SAMIGPT_THEHIVE_API_KEY="{config.thehive.api_key}"')
-            lines.append(f"SAMIGPT_THEHIVE_TIMEOUT_SECONDS={config.thehive.timeout_seconds}")
+            lines.append(f"ATTACKLENS_THEHIVE_URL={config.thehive.base_url}")
+            lines.append(f'ATTACKLENS_THEHIVE_API_KEY="{config.thehive.api_key}"')
+            lines.append(f"ATTACKLENS_THEHIVE_TIMEOUT_SECONDS={config.thehive.timeout_seconds}")
             lines.append("")
         else:
             lines.append("# TheHive Case Management (disabled)")
-            lines.append("# SAMIGPT_THEHIVE_URL=")
-            lines.append("# SAMIGPT_THEHIVE_API_KEY=")
+            lines.append("# ATTACKLENS_THEHIVE_URL=")
+            lines.append("# ATTACKLENS_THEHIVE_API_KEY=")
             lines.append("")
 
         # IRIS
         if config.iris:
             lines.append("# IRIS Case Management")
-            lines.append(f"SAMIGPT_IRIS_URL={config.iris.base_url}")
-            lines.append(f'SAMIGPT_IRIS_API_KEY="{config.iris.api_key}"')
-            lines.append(f"SAMIGPT_IRIS_TIMEOUT_SECONDS={config.iris.timeout_seconds}")
-            lines.append(f"SAMIGPT_IRIS_VERIFY_SSL={'true' if config.iris.verify_ssl else 'false'}")
+            lines.append(f"ATTACKLENS_IRIS_URL={config.iris.base_url}")
+            lines.append(f'ATTACKLENS_IRIS_API_KEY="{config.iris.api_key}"')
+            lines.append(f"ATTACKLENS_IRIS_TIMEOUT_SECONDS={config.iris.timeout_seconds}")
+            lines.append(f"ATTACKLENS_IRIS_VERIFY_SSL={'true' if config.iris.verify_ssl else 'false'}")
             lines.append("")
         else:
             lines.append("# IRIS Case Management (disabled)")
-            lines.append("# SAMIGPT_IRIS_URL=")
-            lines.append("# SAMIGPT_IRIS_API_KEY=")
+            lines.append("# ATTACKLENS_IRIS_URL=")
+            lines.append("# ATTACKLENS_IRIS_API_KEY=")
             lines.append("")
 
         # Elastic
         if config.elastic:
             lines.append("# SIEM (Elasticsearch or OpenSearch)")
-            lines.append(f"SAMIGPT_ELASTIC_URL={config.elastic.base_url}")
-            lines.append(f"SAMIGPT_ELASTIC_SIEM_TYPE={config.elastic.siem_type}")
+            lines.append(f"ATTACKLENS_ELASTIC_URL={config.elastic.base_url}")
+            lines.append(f"ATTACKLENS_ELASTIC_SIEM_TYPE={config.elastic.siem_type}")
             if config.elastic.api_key:
-                lines.append(f'SAMIGPT_ELASTIC_API_KEY="{config.elastic.api_key}"')
+                lines.append(f'ATTACKLENS_ELASTIC_API_KEY="{config.elastic.api_key}"')
             if config.elastic.username:
-                lines.append(f'SAMIGPT_ELASTIC_USERNAME="{config.elastic.username}"')
+                lines.append(f'ATTACKLENS_ELASTIC_USERNAME="{config.elastic.username}"')
             if config.elastic.password:
-                lines.append(f'SAMIGPT_ELASTIC_PASSWORD="{config.elastic.password}"')
-            lines.append(f"SAMIGPT_ELASTIC_TIMEOUT_SECONDS={config.elastic.timeout_seconds}")
-            lines.append(f"SAMIGPT_ELASTIC_VERIFY_SSL={'true' if config.elastic.verify_ssl else 'false'}")
+                lines.append(f'ATTACKLENS_ELASTIC_PASSWORD="{config.elastic.password}"')
+            lines.append(f"ATTACKLENS_ELASTIC_TIMEOUT_SECONDS={config.elastic.timeout_seconds}")
+            lines.append(f"ATTACKLENS_ELASTIC_VERIFY_SSL={'true' if config.elastic.verify_ssl else 'false'}")
             lines.append("")
         else:
             lines.append("# Elastic (SIEM) (disabled)")
-            lines.append("# SAMIGPT_ELASTIC_URL=")
+            lines.append("# ATTACKLENS_ELASTIC_URL=")
             lines.append("")
 
         # EDR
         if config.edr:
             lines.append("# EDR Configuration")
-            lines.append(f"SAMIGPT_EDR_TYPE={config.edr.edr_type}")
-            lines.append(f"SAMIGPT_EDR_URL={config.edr.base_url}")
-            lines.append(f'SAMIGPT_EDR_API_KEY="{config.edr.api_key}"')
-            lines.append(f"SAMIGPT_EDR_TIMEOUT_SECONDS={config.edr.timeout_seconds}")
-            lines.append(f"SAMIGPT_EDR_VERIFY_SSL={'true' if config.edr.verify_ssl else 'false'}")
+            lines.append(f"ATTACKLENS_EDR_TYPE={config.edr.edr_type}")
+            lines.append(f"ATTACKLENS_EDR_URL={config.edr.base_url}")
+            lines.append(f'ATTACKLENS_EDR_API_KEY="{config.edr.api_key}"')
+            lines.append(f"ATTACKLENS_EDR_TIMEOUT_SECONDS={config.edr.timeout_seconds}")
+            lines.append(f"ATTACKLENS_EDR_VERIFY_SSL={'true' if config.edr.verify_ssl else 'false'}")
             lines.append("")
         else:
             lines.append("# EDR Configuration (disabled)")
-            lines.append("# SAMIGPT_EDR_URL=")
-            lines.append("# SAMIGPT_EDR_API_KEY=")
+            lines.append("# ATTACKLENS_EDR_URL=")
+            lines.append("# ATTACKLENS_EDR_API_KEY=")
             lines.append("")
 
         with open(env_file, "w") as f:
