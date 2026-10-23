@@ -12,7 +12,9 @@ Watch the demo video to see SamiGPT in action:
 
 ### Performance & Cost
 
-**Key Metrics:**
+> **Note:** The metrics below come from this project's original demo flow (Cursor IDE + paid LLM, see the AI Controller section below) and predate the free/local `investigate_alert()` pipeline. They have not been re-measured against the current pipeline and should not be read as its cost or latency.
+
+**Key Metrics (original demo flow):**
 - ~ $0.18 per alert
 - ~ 50 seconds to investigate an alert per agent/tab
 
@@ -24,8 +26,7 @@ For detailed documentation and presentation materials:
 
 ### Quick Start
 
-git add README.md
-git commit -m "docs: document MCP Server as the primary path, AI Controller as optional"SamiGPT is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the note under "Optional" below before reaching for it.
+SamiGPT is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the note under "Optional" below before reaching for it.
 
 #### Recommended: MCP Server (Direct Integration)
 
@@ -81,20 +82,25 @@ SamiGPT acts as an MCP server that exposes security investigation and response c
 - **Case Management Systems** (TheHive, IRIS)
 - **SIEM Platforms** (Elastic)
 - **EDR Solutions** (Elastic Defend)
-- **Threat Intelligence** (OpenCTI, Local TIP)
+- **Threat Intelligence** (OpenCTI, Local TIP, MISP)
+- **MITRE ATT&CK** - keyword-based mapping of alerts to techniques
 
-The platform enables automated triage, investigation, correlation, and response workflows through intelligent agent profiles organized by SOC tier (SOC1, SOC2).
+Its core deliverable is the `investigate_alert()` pipeline: given an alert ID, it pulls the related SIEM events, enriches with CTI and MITRE ATT&CK context, generates an LLM-written report (via a local Ollama model), persists it to PostgreSQL, and posts it as a case comment - all human-in-the-loop, with no automated containment or remediation.
+
+The platform enables automated triage, investigation, correlation, and response workflows through intelligent agent profiles organized by SOC tier (SOC1, SOC2, SOC3).
 
 ## Features
 
 ### Core Capabilities
 
 - **Automated Alert Triage**: Intelligent initial assessment and classification of security alerts
+- **End-to-End Investigation Pipeline**: `investigate_alert()` orchestrates SIEM, CTI, and ATT&CK enrichment into an LLM-generated report, persisted to PostgreSQL and posted back to the case - investigation-only, with every optional enrichment stage degrading gracefully (best-effort, non-fatal) if an integration is unavailable
 - **Case Management**: Create, update, and manage security cases with observables, comments, and timeline tracking
 - **SIEM Integration**: Search security events, pivot on indicators, and correlate activities across environments
-- **EDR Response**: Endpoint isolation, process termination, and forensic artifact collection
-- **Threat Intelligence**: IOC enrichment and reputation analysis
-- **Multi-Tier SOC Workflows**: Structured workflows for SOC1 (triage) and SOC2 (investigation)
+- **EDR Investigation**: Endpoint summaries and forensic artifact collection - no isolation or process termination tooling exists; see [EDR Investigation](#edr-investigation) below
+- **Threat Intelligence**: IOC enrichment and reputation analysis (OpenCTI, Local TIP, MISP)
+- **MITRE ATT&CK Mapping**: Keyword/TF-IDF matching of alert content to ATT&CK techniques
+- **Multi-Tier SOC Workflows**: Structured workflows for SOC1 (triage), SOC2 (investigation), and SOC3 (escalation)
 
 ### Agent Profiles & Runbooks
 
@@ -102,6 +108,7 @@ SamiGPT includes pre-configured agent profiles with specialized runbooks:
 
 - **SOC1 Agents**: Initial alert triage, enrichment, and false positive identification
 - **SOC2 Agents**: Deep investigation, correlation, and case analysis
+- **SOC3 Agents**: Escalation handling for cases that SOC2 analysis flags as needing senior review
 
 ## Workflows
 
@@ -129,7 +136,7 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
 
 ### Prerequisites
 
-- Python 3.9 or higher
+- Python 3.12 (the version this project's CI tests against)
 - pip package manager
 
 ### Setup
@@ -137,7 +144,7 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
-   cd SamiGPT
+   cd ai-soc-agent
    ```
 
 2. **Create and activate virtual environment**:
@@ -152,12 +159,18 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
    pip install -r requirements.txt
    ```
 
-4. **Start PostgreSQL** (used to persist investigation reports):
+4. **Create your configuration file**:
+   ```bash
+   cp config.json.example config.json
+   ```
+   Then edit `config.json` with your own integration credentials (see Configuration section below).
+
+5. **Start PostgreSQL** (used to persist investigation reports):
    ```bash
    docker compose up -d postgres
    ```
 
-5. **Configure integrations** (see Configuration section below)
+6. **Configure integrations** (see Configuration section below)
 
 ### Connect MCP Server to AI Tools
 
@@ -173,7 +186,7 @@ If you're using the **MCP Server** (see Quick Start above), configure your AI to
        "sami-gpt": {
          "command": "python",
          "args": ["-m", "src.mcp.mcp_server"],
-         "cwd": "/absolute/path/to/SamiGPT"
+         "cwd": "/absolute/path/to/ai-soc-agent"
        }
      }
    }
@@ -190,7 +203,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
     "sami-gpt": {
       "command": "python",
       "args": ["-m", "src.mcp.mcp_server"],
-      "cwd": "/absolute/path/to/SamiGPT"
+      "cwd": "/absolute/path/to/ai-soc-agent"
     }
   }
 }
@@ -211,7 +224,7 @@ The MCP server can also be connected to:
 ### Directory Structure
 
 ```
-SamiGPT/
+ai-soc-agent/
 ├── src/
 │   ├── api/              # Generic interfaces (CaseManagementClient, SIEMClient, EDRClient)
 │   ├── core/             # Configuration, logging, errors, DTOs
@@ -219,14 +232,19 @@ SamiGPT/
 │   │   ├── case_management/  # TheHive, IRIS integrations
 │   │   ├── siem/             # Elastic integration
 │   │   ├── edr/              # EDR platform integrations
-│   │   ├── cti/              # Threat intelligence integrations
+│   │   ├── cti/              # Threat intelligence integrations (OpenCTI, Local TIP, MISP)
+│   │   ├── attack/           # MITRE ATT&CK mapper
+│   │   ├── llm/              # LLM client (Ollama) for report generation
+│   │   ├── storage/          # PostgreSQL persistence for investigation reports
 │   │   └── eng/              # Engineering board integrations
 │   ├── mcp/              # MCP server, runbook manager, agent profiles
-│   ├── orchestrator/     # Workflow orchestration
+│   ├── orchestrator/     # Workflow orchestration, including investigate_alert()
+│   ├── ai_controller/    # Optional web dashboard (see Quick Start above) - not core scope
 │   └── web/              # Web UI for configuration
 ├── run_books/            # SOC tier runbooks and workflows
 ├── config/               # Agent profiles and configuration
-└── client_env/           # Client-specific infrastructure data
+├── client_env/           # Client-specific infrastructure data
+└── .github/workflows/    # CI: tests, coverage, lint (ruff), CodeQL
 ```
 
 ### Design Principles
@@ -248,9 +266,11 @@ See `config.json.example` for the complete configuration schema. Key sections:
 - `elastic`: SIEM configuration
 - `edr`: EDR platform configuration
 - `cti`: Threat intelligence configuration
+- `misp`: MISP threat intelligence configuration
+- `ollama`: Local LLM configuration used by `investigate_alert()` to generate reports
 - `eng`: Engineering board configuration (ClickUp, Trello, GitHub)
 - `postgres`: PostgreSQL connection settings for persisting investigation reports (defaults match `docker-compose.yml`)
-- `ai_controller`: AI controller web interface settings
+- `ai_controller`: AI controller web interface settings (optional, see Quick Start above)
 - `logging`: Logging configuration
 
 ## Usage Examples
@@ -355,13 +375,24 @@ src/integrations/case_management/new_vendor/
 
 ### Running Tests
 
+Install the dev dependencies first:
+
 ```bash
-# Run all tests
-pytest tests/
+pip install -r requirements-dev.txt
+```
+
+```bash
+# Run all tests with coverage
+pytest tests/ --cov=src --cov-report=term-missing
 
 # Run specific integration tests
 pytest tests/integrations/case_management/
+
+# Lint
+ruff check src/ tests/
 ```
+
+Every pull request runs this same test suite, lint, a coverage check, and CodeQL security scanning via GitHub Actions (see `.github/workflows/`).
 
 ## Contributing
 
