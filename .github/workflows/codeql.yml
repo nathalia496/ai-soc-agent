@@ -1,0 +1,43 @@
+name: CodeQL
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  schedule:
+    # Catches newly-published vulnerability patterns even on weeks with no
+    # code changes. Day/time picked arbitrarily, off-peak.
+    - cron: "17 5 * * 1"
+  workflow_dispatch:
+
+jobs:
+  analyze:
+    name: Analyze (python)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Required so CodeQL can upload its results (SARIF) back to the repo's
+      # Security > Code scanning tab and as PR annotations.
+      security-events: write
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          # security-extended adds lower-severity/lower-precision security
+          # queries on top of the default set (e.g. broader taint-tracking
+          # for SSRF, command injection, SQL injection) - a deliberately
+          # thorough choice for a project whose own subject matter is
+          # security operations. No build step is needed for Python: CodeQL
+          # analyzes the source directly rather than compiling it.
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
