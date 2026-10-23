@@ -117,10 +117,13 @@ class TestPriorityToTheHivePriority:
 
     def test_all_priority_mappings(self):
         """Test all priority values map correctly."""
-        assert priority_to_thehive_priority(CasePriority.LOW).value == "low"
-        assert priority_to_thehive_priority(CasePriority.MEDIUM).value == "medium"
-        assert priority_to_thehive_priority(CasePriority.HIGH).value == "high"
-        assert priority_to_thehive_priority(CasePriority.CRITICAL).value == "critical"
+        # TheHiveCasePriority's values are capitalized (thehive_models.py), e.g.
+        # LOW = "Low" - the enum definition is correct; this test's expected
+        # values were wrong (asserted lowercase), not the mapper.
+        assert priority_to_thehive_priority(CasePriority.LOW).value == "Low"
+        assert priority_to_thehive_priority(CasePriority.MEDIUM).value == "Medium"
+        assert priority_to_thehive_priority(CasePriority.HIGH).value == "High"
+        assert priority_to_thehive_priority(CasePriority.CRITICAL).value == "Critical"
 
 
 class TestCommentToTheHivePayload:
