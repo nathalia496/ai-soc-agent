@@ -44,9 +44,13 @@ class OpenCTIHttpClient:
         self.api_key = api_key
         self.timeout_seconds = timeout_seconds
         self.verify_ssl = verify_ssl
-        # Try /api/graphql first, fallback to /graphql
-        self.graphql_endpoint = f"{self.base_url}/api/graphql"
-        self.graphql_endpoint_fallback = f"{self.base_url}/graphql"
+        # OpenCTI's documented GraphQL API lives at /graphql (see
+        # docs.opencti.io, "GraphQL API") - that's the primary endpoint.
+        # /api/graphql is kept as a fallback only, in case some deployment
+        # fronts the API behind that path; it was previously (incorrectly)
+        # the primary endpoint.
+        self.graphql_endpoint = f"{self.base_url}/graphql"
+        self.graphql_endpoint_fallback = f"{self.base_url}/api/graphql"
         
         logger.info(
             f"OpenCTI HTTP client initialized: base_url={self.base_url}, "
@@ -380,10 +384,14 @@ class OpenCTIHttpClient:
             status_code = None
             if hasattr(e, "response") and e.response is not None:
                 status_code = e.response.status_code
-                logger.debug(
-                    f"Error response details: status_code={status_code}, "
-                    f"headers={dict(e.response.headers) if e.response.headers else 'N/A'}"
-                )
+                # Best-effort debug logging only - headers isn't guaranteed to
+                # be dict-convertible (e.g. a test double), so don't let a
+                # formatting failure here mask the real error being handled.
+                try:
+                    headers_repr = dict(e.response.headers) if e.response.headers else "N/A"
+                except Exception:
+                    headers_repr = "N/A"
+                logger.debug(f"Error response details: status_code={status_code}, headers={headers_repr}")
                 
                 try:
                     error_detail = e.response.json()

@@ -80,17 +80,20 @@ class TestOpenCTIHttpClient:
     @patch("src.integrations.cti.opencti.opencti_http.requests.post")
     def test_lookup_hash_success(self, mock_post):
         """Test successful hash lookup."""
-        # Setup mock response
+        # Setup mock response. OpenCTI's real GraphQL schema queries
+        # observables via `stixCyberObservables` (filtered by entity_type +
+        # observable_value), not a fictional `hashes(hashValue, ...)` query -
+        # see opencti_http.py's lookup_hash() for the query actually sent.
         mock_response = Mock()
         mock_response.json.return_value = {
             "data": {
-                "hashes": {
+                "stixCyberObservables": {
                     "edges": [
                         {
                             "node": {
                                 "id": "hash-123",
-                                "value": "abc123def456",
-                                "algorithm": "SHA256",
+                                "observable_value": "abc123def456",
+                                "entity_type": "File-SHA256",
                                 "indicators": {
                                     "edges": [
                                         {
@@ -156,15 +159,17 @@ class TestOpenCTIHttpClient:
         assert len(result["indicators"][0]["kill_chain_phases"]) == 1
         assert result["indicators"][0]["kill_chain_phases"][0]["kill_chain_name"] == "mitre-attack"
         assert result["indicators"][0]["kill_chain_phases"][0]["phase_name"] == "execution"
-        
+
         # Verify API call
         mock_post.assert_called_once()
         call_args = mock_post.call_args
         assert call_args[0][0] == "https://opencti.example.com/graphql"
         assert "query" in call_args[1]["json"]
         assert "variables" in call_args[1]["json"]
-        assert call_args[1]["json"]["variables"]["hashValue"] == "abc123def456"
-        assert call_args[1]["json"]["variables"]["hashAlgorithm"] == "SHA256"
+        variables = call_args[1]["json"]["variables"]
+        filter_values = {f["key"]: f["values"] for f in variables["filters"]}
+        assert filter_values["observable_value"] == ["abc123def456"]
+        assert filter_values["entity_type"] == ["File-SHA256"]
         assert call_args[1]["timeout"] == 30
         assert "Authorization" in call_args[1]["headers"]
         assert call_args[1]["headers"]["Authorization"] == "Bearer test-api-key"
@@ -176,7 +181,7 @@ class TestOpenCTIHttpClient:
         mock_response = Mock()
         mock_response.json.return_value = {
             "data": {
-                "hashes": {
+                "stixCyberObservables": {
                     "edges": []
                 }
             }
@@ -198,7 +203,7 @@ class TestOpenCTIHttpClient:
         """Test that hash value whitespace is stripped."""
         mock_response = Mock()
         mock_response.json.return_value = {
-            "data": {"hashes": {"edges": []}}
+            "data": {"stixCyberObservables": {"edges": []}}
         }
         mock_response.raise_for_status = Mock()
         mock_post.return_value = mock_response
@@ -211,7 +216,8 @@ class TestOpenCTIHttpClient:
 
         call_args = mock_post.call_args
         variables = call_args[1]["json"]["variables"]
-        assert variables["hashValue"] == "abc123"
+        filter_values = {f["key"]: f["values"] for f in variables["filters"]}
+        assert filter_values["observable_value"] == ["abc123"]
         print("✓ test_lookup_hash_strips_whitespace: PASSED")
     
     @patch("src.integrations.cti.opencti.opencti_http.requests.post")
@@ -283,7 +289,7 @@ class TestOpenCTIHttpClient:
         """Test SSL verification setting."""
         mock_response = Mock()
         mock_response.json.return_value = {
-            "data": {"hashes": {"edges": []}}
+            "data": {"stixCyberObservables": {"edges": []}}
         }
         mock_response.raise_for_status = Mock()
         mock_post.return_value = mock_response
