@@ -141,6 +141,10 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
 
 ### Setup
 
+> **Shortcut:** steps 2-4 below (venv, dependencies, `config.json`) are automated by
+> `./scripts/setup.sh` after you clone the repo. It doesn't start PostgreSQL or Ollama (steps 5-6) -
+> those still need the commands below, or your own setup.
+
 1. **Clone the repository**:
    ```bash
    git clone <repository-url>
@@ -165,12 +169,26 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
    ```
    Then edit `config.json` with your own integration credentials (see Configuration section below).
 
+   > **Note on the Ollama model:** `config.json.example`'s `ollama.model` defaults to `"llama3.1"`. This has
+   > to match a model you've actually pulled (step 6 below) - if you pull a different model (e.g.
+   > `llama3.2`), update `ollama.model` in `config.json` to match, or `generate_investigation_report` /
+   > `investigate_alert` will fail with a model-not-found error from Ollama.
+
 5. **Start PostgreSQL** (used to persist investigation reports):
    ```bash
    docker compose up -d postgres
    ```
 
-6. **Configure integrations** (see Configuration section below)
+6. **Start Ollama and pull a model** (used to generate investigation reports):
+   ```bash
+   docker compose up -d ollama
+   docker exec soc-ollama ollama pull llama3.1
+   ```
+   `docker compose up` does not pull a model automatically - this step is required before
+   `generate_investigation_report` or `investigate_alert` will work. If you pull a different model than
+   `llama3.1`, update `ollama.model` in `config.json` to match (see the note in step 4).
+
+7. **Configure integrations** (see Configuration section below)
 
 ### Connect MCP Server to AI Tools
 
