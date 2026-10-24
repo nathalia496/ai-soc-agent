@@ -31,7 +31,7 @@ logger = get_logger("sami.ai_controller.web.server")
 
 # Create FastAPI app
 app = FastAPI(
-    title="SamiGPT AI Controller",
+    title="AttackLens AI Controller",
     description="Web interface for managing and executing agent commands",
     version="1.0.0",
 )
@@ -1188,6 +1188,6 @@ if __name__ == "__main__":
     # Initialize
     initialize()
     
-    print("Starting SamiGPT AI Controller...")
+    print("Starting AttackLens AI Controller...")
     uvicorn.run(app, host="0.0.0.0", port=8081)
 

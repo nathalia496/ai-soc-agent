@@ -103,7 +103,7 @@ class TestHappyPath:
         llm_client = Mock()
         llm_client.generate_report.return_value = VALID_REPORT
 
-        case_comment = Mock(id="c1", case_id="case-1", author="SamiGPT", content="...", created_at=None)
+        case_comment = Mock(id="c1", case_id="case-1", author="AttackLens", content="...", created_at=None)
         case_client = Mock()
         case_client.add_case_comment.return_value = case_comment
 

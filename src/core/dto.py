@@ -1,5 +1,5 @@
 """
-Common DTO utilities for SamiGPT.
+Common DTO utilities for AttackLens.
 
 We use Python dataclasses for DTOs across the generic API layer. This module
 provides a small mixin with helper methods so all DTOs have a consistent
