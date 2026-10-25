@@ -1,0 +1,62 @@
+{
+  "scenario": "suspicious_login_triage",
+  "runbook": "run_books/soc1/cases/suspicious_login_triage.md",
+  "alert_id": "eval-suspicious-login-triage",
+  "alert_index": "alerts-eval-suspicious-login-triage",
+  "log_index": "logs-eval-suspicious-login-triage",
+  "alert_timestamp": "2026-02-03T03:11:00Z",
+  "alert": {
+    "@timestamp": "2026-02-03T03:11:00Z",
+    "signal": {
+      "rule": {
+        "name": "Impossible Travel: Login From Unusual Location",
+        "description": "User r.alvarez authenticated from an IP geolocated to a different country than a successful login 6 minutes earlier, with no travel plausible between the two locations."
+      },
+      "severity": "medium",
+      "status": "open"
+    },
+    "host": {"name": "vpn-gw-01"},
+    "user": {"name": "r.alvarez"},
+    "source": {"ip": "198.51.100.23"},
+    "destination": {"ip": "10.5.0.1"},
+    "event": {
+      "category": ["authentication"],
+      "reason": "Impossible travel detected between consecutive successful logins"
+    },
+    "process": {"name": "sshd"}
+  },
+  "logs": [
+    {
+      "offset_minutes": -20,
+      "message": "Failed login attempt for r.alvarez from 198.51.100.23 (invalid password)",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["authentication"]}
+    },
+    {
+      "offset_minutes": -19,
+      "message": "Failed login attempt for r.alvarez from 198.51.100.23 (invalid password)",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["authentication"]}
+    },
+    {
+      "offset_minutes": -6,
+      "message": "Successful VPN login for r.alvarez from 10.5.0.44 (geolocation: Chicago, US)",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "10.5.0.44"},
+      "event": {"category": ["authentication"]}
+    },
+    {
+      "offset_minutes": -1,
+      "message": "Successful VPN login for r.alvarez from 198.51.100.23 (geolocation: Lagos, NG) - 6 minutes after prior login from Chicago, US",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["authentication"]}
+    }
+  ]
+}
