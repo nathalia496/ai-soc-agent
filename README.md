@@ -26,7 +26,7 @@ For detailed documentation and presentation materials:
 
 ### Quick Start
 
-SamiGPT is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the note under "Optional" below before reaching for it.
+SamiGPT is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. A minimal **Investigation API** also exposes that same pipeline over plain HTTP, for callers that aren't MCP clients. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the notes under "Optional" below before reaching for either.
 
 #### Recommended: MCP Server (Direct Integration)
 
@@ -45,6 +45,31 @@ Use the MCP server directly to connect SamiGPT tools to Claude Desktop, Cursor, 
    ```
 
 3. **Configure your AI tool** (see "Connect MCP Server to AI Tools" section below for detailed instructions)
+
+#### Optional: Investigation API (HTTP)
+
+A minimal FastAPI server that exposes `investigate_alert()` directly over HTTP, for cases where an MCP client isn't practical (e.g. calling it from a script, a webhook, or another service). It is not a replacement for the MCP server - it wraps the same pipeline, with the same investigation-only, human-in-the-loop contract (it returns a report; it never takes remediation action).
+
+**Steps:**
+
+1. **Activate virtual environment:**
+   ```bash
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+2. **Start the API server:**
+   ```bash
+   uvicorn src.web.investigation_api:app --host 0.0.0.0 --port 8000
+   ```
+
+3. **Run an investigation:**
+   ```bash
+   curl -X POST http://localhost:8000/investigate/<alert_id> \
+     -H "X-Admin-Secret: $SAMIGPT_ADMIN_SECRET"
+   ```
+   `POST /investigate/{alert_id}` returns the same report/warnings structure `investigate_alert()` produces directly. `GET /health` reports which optional integrations (SIEM, CTI, MISP, ATT&CK mapper, LLM, case management, storage) are actually configured.
+
+   `/investigate/{alert_id}` requires the `X-Admin-Secret` header to match `SAMIGPT_ADMIN_SECRET` (same shared-secret, constant-time-compared auth as the configuration web UI below, adapted to a header since there's no login page here). `/health` is left unauthenticated, since it only reports booleans, not configuration values - treat it as local-only if that's not acceptable in your environment.
 
 #### Optional: AI Controller (Web Interface)
 
