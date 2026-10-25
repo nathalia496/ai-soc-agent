@@ -34,8 +34,7 @@ def main():
     clickup_config = config.eng.clickup
     api_token = clickup_config.api_token
     
-    print(f"\nAPI Token (first 20 chars): {api_token[:20]}...")
-    print(f"Token length: {len(api_token)}")
+    print(f"\nToken length: {len(api_token)}")
     print(f"Token starts with 'pk_': {api_token.startswith('pk_')}")
     
     # Test different endpoints

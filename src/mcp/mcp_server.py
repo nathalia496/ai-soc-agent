@@ -3984,7 +3984,7 @@ async def main() -> None:
     mcp_logger.info(f"  IRIS configured: {config.iris is not None}")
     if config.iris:
         mcp_logger.info(f"    IRIS URL: {config.iris.base_url}")
-        mcp_logger.info(f"    IRIS API key: {'*' * 20}...{config.iris.api_key[-10:] if len(config.iris.api_key) > 10 else '***'}")
+        mcp_logger.info(f"    IRIS API key: {'configured' if config.iris.api_key else 'not configured'}")
     mcp_logger.info(f"  TheHive configured: {config.thehive is not None}")
     mcp_logger.info(f"  Elastic configured: {config.elastic is not None}")
     mcp_logger.info(f"  EDR configured: {config.edr is not None}")
@@ -4040,7 +4040,7 @@ async def main() -> None:
                 if config.edr:
                     mcp_logger.info(f"    EDR URL: {config.edr.base_url}")
                     mcp_logger.info(f"    EDR Type: {config.edr.edr_type}")
-                    mcp_logger.info(f"    EDR API key: {'*' * 20}...{config.edr.api_key[-10:] if config.edr.api_key and len(config.edr.api_key) > 10 else '***'}")
+                    mcp_logger.info(f"    EDR API key: {'configured' if config.edr.api_key else 'not configured'}")
             except Exception as e:
                 logger.error(f"Failed to initialize Elastic Defend EDR client: {e}")
                 mcp_logger.error(f"✗ Failed to initialize Elastic Defend EDR client: {e}", exc_info=True)
