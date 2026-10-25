@@ -6,6 +6,7 @@ This module handles HTTP requests to the local TIP API for hash lookups.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import requests
@@ -16,30 +17,20 @@ from ....core.logging import get_logger
 logger = get_logger("sami.integrations.cti.local_tip.http")
 
 
+@dataclass
 class LocalTipHttpClient:
     """
     HTTP client for Local TIP API.
-    
+
     Handles hash lookups via POST /hashes endpoint.
     """
 
-    def __init__(
-        self,
-        base_url: str,
-        timeout_seconds: int = 30,
-        verify_ssl: bool = True,
-    ) -> None:
-        """
-        Initialize the Local TIP HTTP client.
-        
-        Args:
-            base_url: Base URL of the TIP API (e.g., "http://10.10.10.95:8084")
-            timeout_seconds: Request timeout in seconds
-            verify_ssl: Whether to verify SSL certificates
-        """
-        self.base_url = base_url.rstrip("/")
-        self.timeout_seconds = timeout_seconds
-        self.verify_ssl = verify_ssl
+    base_url: str
+    timeout_seconds: int = 30
+    verify_ssl: bool = True
+
+    def __post_init__(self) -> None:
+        self.base_url = self.base_url.rstrip("/")
 
     def _headers(self) -> Dict[str, str]:
         """Build request headers."""
