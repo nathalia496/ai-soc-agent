@@ -139,6 +139,16 @@ async def investigate(alert_id: str, body: Optional[InvestigateRequest] = None) 
             comment_author=params.comment_author,
         )
     except IntegrationError as e:
+        # Log the full exception server-side only; the client gets a generic
+        # message so internal details (exception text, integration internals)
+        # never flow into the HTTP response.
+        logger.error(f"investigate_alert() failed for alert {alert_id}: {e}", exc_info=True)
         if "not found" in str(e).lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e)) from e
-        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=str(e)) from e
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Alert {alert_id} not found",
+            ) from e
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Upstream integration error while investigating alert",
+        ) from e
