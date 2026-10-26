@@ -1,5 +1,5 @@
 """
-Web interface components for SamiGPT.
+Web interface components for AttackLens.
 
 This package contains:
 - ``mcp_server.py``: MCP server that exposes investigation skills as tools.

@@ -1,5 +1,5 @@
 """
-Generic, vendor-neutral APIs for SamiGPT.
+Generic, vendor-neutral APIs for AttackLens.
 
 This package defines interfaces and DTOs for:
 - Case management (`case_management.py`)

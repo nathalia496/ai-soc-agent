@@ -1,5 +1,5 @@
 """
-AI Controller for SamiGPT.
+AI Controller for AttackLens.
 
 This module provides a web-based controller for managing and executing agent commands,
 with support for multiple concurrent sessions and scheduled auto-runs.

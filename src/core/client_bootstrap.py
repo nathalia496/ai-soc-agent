@@ -120,7 +120,7 @@ def bootstrap_investigation_clients(
     # "cti_local_tip" sections, so both platforms can be queried concurrently.
     config_dict = None
     try:
-        config_file = os.getenv("SAMIGPT_CONFIG_FILE", "config.json")
+        config_file = os.getenv("ATTACKLENS_CONFIG_FILE", "config.json")
         if os.path.exists(config_file):
             with open(config_file, "r") as f:
                 config_dict = json.load(f)

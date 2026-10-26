@@ -1,15 +1,15 @@
 {
   "mcpServers": {
-    "sami-gpt": {
+    "attack-lens": {
       "command": "/usr/bin/python3",
       "args": [
         "-m",
         "src.mcp.mcp_server"
       ],
-      "cwd": "/path/to/project/SamiGPT",
+      "cwd": "/path/to/project/AttackLens",
       "env": {
-        "SAMIGPT_CONFIG_FILE": "/path/to/project/SamiGPT/config.json",
-        "PYTHONPATH": "/path/to/project/SamiGPT"
+        "ATTACKLENS_CONFIG_FILE": "/path/to/project/AttackLens/config.json",
+        "PYTHONPATH": "/path/to/project/AttackLens"
       }
     }
   }

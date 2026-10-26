@@ -1,5 +1,5 @@
 """
-Web server for SamiGPT configuration management.
+Web server for AttackLens configuration management.
 
 This module provides a FastAPI server that exposes:
 - REST API for managing configurations
@@ -36,8 +36,8 @@ from ..core.logging import get_logger
 logger = get_logger("sami.web.config_server")
 
 # Get admin secret from environment or use default
-ADMIN_SECRET = os.getenv("SAMIGPT_ADMIN_SECRET", "admin")
-SESSION_SECRET = os.getenv("SAMIGPT_SESSION_SECRET", secrets.token_urlsafe(32))
+ADMIN_SECRET = os.getenv("ATTACKLENS_ADMIN_SECRET", "admin")
+SESSION_SECRET = os.getenv("ATTACKLENS_SESSION_SECRET", secrets.token_urlsafe(32))
 
 # In-memory session store (for simple implementation)
 # In production, consider using Redis or database-backed sessions
@@ -106,8 +106,8 @@ class SimpleSessionMiddleware(BaseHTTPMiddleware):
 
 # Create FastAPI app
 app = FastAPI(
-    title="SamiGPT Configuration Manager",
-    description="Web interface for configuring SamiGPT integrations",
+    title="AttackLens Configuration Manager",
+    description="Web interface for configuring AttackLens integrations",
     version="1.0.0",
 )
 
@@ -207,10 +207,10 @@ async def root(request: Request):
             content="""
             <!DOCTYPE html>
             <html>
-            <head><title>Login - SamiGPT</title></head>
+            <head><title>Login - AttackLens</title></head>
             <body>
                 <h1>Login Required</h1>
-                <p>Please set SAMIGPT_ADMIN_SECRET environment variable and login page will appear.</p>
+                <p>Please set ATTACKLENS_ADMIN_SECRET environment variable and login page will appear.</p>
             </body>
             </html>
             """
@@ -222,7 +222,7 @@ async def root(request: Request):
         with open(html_path, "r") as f:
             return HTMLResponse(content=f.read())
     return HTMLResponse(
-        content="<h1>SamiGPT Configuration Manager</h1><p>index.html not found</p>"
+        content="<h1>AttackLens Configuration Manager</h1><p>index.html not found</p>"
     )
 
 
@@ -515,8 +515,8 @@ async def reload_config(request: Request):
 if __name__ == "__main__":
     import uvicorn
 
-    print("Starting SamiGPT Configuration Manager...")
-    print("Admin secret is set via SAMIGPT_ADMIN_SECRET environment variable")
+    print("Starting AttackLens Configuration Manager...")
+    print("Admin secret is set via ATTACKLENS_ADMIN_SECRET environment variable")
     if ADMIN_SECRET == "admin":
-        print("WARNING: Using default admin secret! Set SAMIGPT_ADMIN_SECRET environment variable.")
+        print("WARNING: Using default admin secret! Set ATTACKLENS_ADMIN_SECRET environment variable.")
     uvicorn.run(app, host="0.0.0.0", port=8080)

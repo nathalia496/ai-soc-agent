@@ -1,12 +1,12 @@
-# SamiGPT
+# AttackLens
 
-**SamiGPT** is an AI-powered security investigation and incident response platform that provides security operations teams with intelligent automation for case management, SIEM analysis, and CTI enrichment through the Model Context Protocol (MCP).
+**AttackLens** is an AI-powered security investigation and incident response platform that provides security operations teams with intelligent automation for case management, SIEM analysis, and CTI enrichment through the Model Context Protocol (MCP).
 
 > **Note:** This project is currently under active development. Features, APIs, and documentation may change as development progresses.
 
 ## Demo
 
-Watch the demo video to see SamiGPT in action:
+Watch the demo video to see AttackLens in action:
 
 [Demo Video](https://youtu.be/usd8ed-7AQg)
 
@@ -26,11 +26,11 @@ For detailed documentation and presentation materials:
 
 ### Quick Start
 
-SamiGPT is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. A minimal **Investigation API** also exposes that same pipeline over plain HTTP, for callers that aren't MCP clients. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the notes under "Optional" below before reaching for either.
+AttackLens is built around the **MCP Server** - that's the project's primary, supported way to run it, and the one its design goals (free, local, human-in-the-loop) and core deliverable (the `investigate_alert()` pipeline) are built on. A minimal **Investigation API** also exposes that same pipeline over plain HTTP, for callers that aren't MCP clients. An **AI Controller** web interface also exists, inherited from this project's original demo; it depends on a paid, proprietary tool and sits outside the project's core scope. See the notes under "Optional" below before reaching for either.
 
 #### Recommended: MCP Server (Direct Integration)
 
-Use the MCP server directly to connect SamiGPT tools to Claude Desktop, Cursor, or any other MCP-compatible client. No paid tooling required - everything runs locally.
+Use the MCP server directly to connect AttackLens tools to Claude Desktop, Cursor, or any other MCP-compatible client. No paid tooling required - everything runs locally.
 
 **Steps:**
 
@@ -65,11 +65,11 @@ A minimal FastAPI server that exposes `investigate_alert()` directly over HTTP, 
 3. **Run an investigation:**
    ```bash
    curl -X POST http://localhost:8000/investigate/<alert_id> \
-     -H "X-Admin-Secret: $SAMIGPT_ADMIN_SECRET"
+     -H "X-Admin-Secret: $ATTACKLENS_ADMIN_SECRET"
    ```
    `POST /investigate/{alert_id}` returns the same report/warnings structure `investigate_alert()` produces directly. `GET /health` reports which optional integrations (SIEM, CTI, MISP, ATT&CK mapper, LLM, case management, storage) are actually configured.
 
-   `/investigate/{alert_id}` requires the `X-Admin-Secret` header to match `SAMIGPT_ADMIN_SECRET` (same shared-secret, constant-time-compared auth as the configuration web UI below, adapted to a header since there's no login page here). `/health` is left unauthenticated, since it only reports booleans, not configuration values - treat it as local-only if that's not acceptable in your environment.
+   `/investigate/{alert_id}` requires the `X-Admin-Secret` header to match `ATTACKLENS_ADMIN_SECRET` (same shared-secret, constant-time-compared auth as the configuration web UI below, adapted to a header since there's no login page here). `/health` is left unauthenticated, since it only reports booleans, not configuration values - treat it as local-only if that's not acceptable in your environment.
 
 #### Optional: AI Controller (Web Interface)
 
@@ -102,7 +102,7 @@ The AI Controller provides a web-based interface and uses the Cursor IDE `cursor
 
 ## Overview
 
-SamiGPT acts as an MCP server that exposes security investigation and response capabilities as tools that can be used by AI agents, LLM tools, and automated workflows. It provides a unified, vendor-neutral API layer that connects to:
+AttackLens acts as an MCP server that exposes security investigation and response capabilities as tools that can be used by AI agents, LLM tools, and automated workflows. It provides a unified, vendor-neutral API layer that connects to:
 
 - **Case Management Systems** (TheHive, IRIS)
 - **SIEM Platforms** (Elastic)
@@ -129,7 +129,7 @@ The platform enables automated triage, investigation, correlation, and response 
 
 ### Agent Profiles & Runbooks
 
-SamiGPT includes pre-configured agent profiles with specialized runbooks:
+AttackLens includes pre-configured agent profiles with specialized runbooks:
 
 - **SOC1 Agents**: Initial alert triage, enrichment, and false positive identification
 - **SOC2 Agents**: Deep investigation, correlation, and case analysis
@@ -137,7 +137,7 @@ SamiGPT includes pre-configured agent profiles with specialized runbooks:
 
 ## Workflows
 
-SamiGPT uses structured workflows organized by SOC tier. The following diagrams illustrate the execution flow:
+AttackLens uses structured workflows organized by SOC tier. The following diagrams illustrate the execution flow:
 
 ### Agent Profiles Flow
 
@@ -204,11 +204,11 @@ If you're using the **MCP Server** (see Quick Start above), configure your AI to
 #### Cursor Integration
 
 1. Open Cursor Settings → Features → Model Context Protocol
-2. Add SamiGPT server configuration:
+2. Add AttackLens server configuration:
    ```json
    {
      "mcpServers": {
-       "sami-gpt": {
+       "attack-lens": {
          "command": "python",
          "args": ["-m", "src.mcp.mcp_server"],
          "cwd": "/absolute/path/to/ai-soc-agent"
@@ -216,7 +216,7 @@ If you're using the **MCP Server** (see Quick Start above), configure your AI to
      }
    }
    ```
-3. Restart Cursor and start using SamiGPT tools in chat
+3. Restart Cursor and start using AttackLens tools in chat
 
 #### Claude Desktop Integration
 
@@ -225,7 +225,7 @@ Edit `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) o
 ```json
 {
   "mcpServers": {
-    "sami-gpt": {
+    "attack-lens": {
       "command": "python",
       "args": ["-m", "src.mcp.mcp_server"],
       "cwd": "/absolute/path/to/ai-soc-agent"
@@ -374,7 +374,7 @@ execute_runbook(
 
 ## Logging
 
-SamiGPT provides comprehensive logging:
+AttackLens provides comprehensive logging:
 
 - **MCP Server Logs**: `logs/mcp/mcp_all.log`, `mcp_requests.log`, `mcp_responses.log`, `mcp_errors.log`
 - **Application Logs**: `logs/debug.log`, `logs/error.log`, `logs/warning.log`

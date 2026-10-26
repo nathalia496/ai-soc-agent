@@ -37,7 +37,7 @@ logger = get_logger(__name__)
 # Same admin-secret pattern as config_server.py, adapted for a stateless API:
 # a shared secret compared in constant time, sent as a header instead of a
 # session cookie (there is no login page/flow here).
-ADMIN_SECRET = os.getenv("SAMIGPT_ADMIN_SECRET", "admin")
+ADMIN_SECRET = os.getenv("ATTACKLENS_ADMIN_SECRET", "admin")
 
 # Clients are bootstrapped once on startup and stashed here; see `lifespan`.
 _clients: Dict[str, Any] = {}
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SamiGPT Investigation API",
+    title="AttackLens Investigation API",
     description="Minimal HTTP endpoint for the investigate_alert() pipeline",
     version="1.0.0",
     lifespan=lifespan,
@@ -67,7 +67,7 @@ app = FastAPI(
 
 def require_admin_secret(x_admin_secret: Optional[str] = Header(default=None)) -> None:
     """
-    Require the ``X-Admin-Secret`` header to match SAMIGPT_ADMIN_SECRET.
+    Require the ``X-Admin-Secret`` header to match ATTACKLENS_ADMIN_SECRET.
 
     Mirrors config_server.py's constant-time secret comparison, but as a
     per-request header check instead of a cookie-backed login session,
@@ -85,7 +85,7 @@ class InvestigateRequest(BaseModel):
     minutes_before: int = 30
     minutes_after: int = 30
     attack_top_n: int = 5
-    comment_author: str = "SamiGPT"
+    comment_author: str = "AttackLens"
 
 
 @app.get("/health")

@@ -1,2 +1,2 @@
-# Tests for SamiGPT
+# Tests for AttackLens
 

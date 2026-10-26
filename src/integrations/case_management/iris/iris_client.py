@@ -369,7 +369,7 @@ class IRISCaseManagementClient(CaseManagementClient):
         payload: Dict[str, Any] = {
             "event_title": title,
             "event_content": content,
-            "event_source": source or "SamiGPT",
+            "event_source": source or "AttackLens",
             "event_category_id": str(category_id or 5),
             "event_in_summary": include_in_summary,
             "event_in_graph": include_in_graph,

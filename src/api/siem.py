@@ -1,5 +1,5 @@
 """
-Generic SIEM API for SamiGPT.
+Generic SIEM API for AttackLens.
 
 This module defines vendor-neutral DTOs and the ``SIEMClient`` interface
 that orchestrator code and LLM tools will use for searching security events

@@ -43,7 +43,7 @@ jobs:
         # server itself) is still wired up correctly - catches import/wiring
         # regressions that wouldn't otherwise be exercised unless a test happens
         # to exercise that exact code path.
-        run: python -c "from src.mcp.mcp_server import SamiGPTMCPServer"
+        run: python -c "from src.mcp.mcp_server import AttackLensMCPServer"
 
       - name: Cache MITRE ATT&CK dataset
         # AttackMapper downloads the ~49MB Enterprise ATT&CK STIX bundle on

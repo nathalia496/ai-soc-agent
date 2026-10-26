@@ -1,4 +1,4 @@
-# SamiGPT Runbooks
+# AttackLens Runbooks
 
 This directory contains security operation runbooks organized by SOC tier levels for autonomous agent execution.
 
@@ -104,7 +104,7 @@ See [SOC_TIER_ORGANIZATION_PLAN.md](./SOC_TIER_ORGANIZATION_PLAN.md) for detaile
 
 ## Usage Examples
 
-See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md) for practical examples of how to use these runbooks with the SamiGPT MCP server.
+See [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md) for practical examples of how to use these runbooks with the AttackLens MCP server.
 
 ## References
 
