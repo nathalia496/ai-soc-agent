@@ -1,0 +1,62 @@
+{
+  "scenario": "suspicious_login_investigation",
+  "runbook": "run_books/soc2/cases/suspicious_login_investigation.md",
+  "alert_id": "eval-suspicious-login-investigation",
+  "alert_index": "alerts-eval-suspicious-login-investigation",
+  "log_index": "logs-eval-suspicious-login-investigation",
+  "alert_timestamp": "2026-02-03T04:40:00Z",
+  "alert": {
+    "@timestamp": "2026-02-03T04:40:00Z",
+    "signal": {
+      "rule": {
+        "name": "Critical: Suspected Account Compromise - Post-Authentication Anomalous Activity",
+        "description": "Following the impossible-travel login flagged in case eval-suspicious-login-triage, user r.alvarez's session performed anomalous actions: a new MFA device was registered, a bulk download occurred from the finance SharePoint site, and an access attempt was made to the payroll admin console - all inconsistent with the user's normal behavior baseline."
+      },
+      "severity": "critical",
+      "status": "open"
+    },
+    "host": {"name": "vpn-gw-01"},
+    "user": {"name": "r.alvarez"},
+    "source": {"ip": "198.51.100.23"},
+    "destination": {"ip": "10.5.0.1"},
+    "event": {
+      "category": ["authentication", "data-access"],
+      "reason": "Anomalous post-authentication activity following an impossible-travel alert; possible account takeover"
+    },
+    "process": {"name": "sshd"}
+  },
+  "logs": [
+    {
+      "offset_minutes": -25,
+      "message": "New MFA device registered for account r.alvarez (device: unrecognized Android handset)",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["authentication"]}
+    },
+    {
+      "offset_minutes": -18,
+      "message": "Bulk download initiated: 'Finance_Q4_Payroll.xlsx' and 11 other files from SharePoint site 'Finance-Shared'",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["data-access"]}
+    },
+    {
+      "offset_minutes": -5,
+      "message": "Access attempt to payroll admin console denied - insufficient privileges",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["data-access"]}
+    },
+    {
+      "offset_minutes": -2,
+      "message": "Session from 198.51.100.23 flagged by UEBA as high-risk; risk score 92/100",
+      "host": {"name": "vpn-gw-01"},
+      "user": {"name": "r.alvarez"},
+      "source": {"ip": "198.51.100.23"},
+      "event": {"category": ["authentication"]}
+    }
+  ]
+}

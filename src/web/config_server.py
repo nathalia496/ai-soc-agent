@@ -31,6 +31,9 @@ from ..core.config_storage import (
     update_config_dict,
 )
 from ..core.errors import ConfigError
+from ..core.logging import get_logger
+
+logger = get_logger("sami.web.config_server")
 
 # Get admin secret from environment or use default
 ADMIN_SECRET = os.getenv("ATTACKLENS_ADMIN_SECRET", "admin")
@@ -401,8 +404,10 @@ async def test_thehive(request: Request):
             }
         )
     except Exception as e:
+        logger.exception(f"TheHive connection test failed: {e}")
         return JSONResponse(
-            content={"success": False, "message": str(e)}, status_code=500
+            content={"success": False, "message": "Connection test failed. Check server logs for details."},
+            status_code=500,
         )
 
 
@@ -429,8 +434,10 @@ async def test_iris(request: Request):
             }
         )
     except Exception as e:
+        logger.exception(f"IRIS connection test failed: {e}")
         return JSONResponse(
-            content={"success": False, "message": str(e)}, status_code=500
+            content={"success": False, "message": "Connection test failed. Check server logs for details."},
+            status_code=500,
         )
 
 
@@ -451,8 +458,10 @@ async def test_elastic(request: Request):
             }
         )
     except Exception as e:
+        logger.exception(f"Elastic connection test failed: {e}")
         return JSONResponse(
-            content={"success": False, "message": str(e)}, status_code=500
+            content={"success": False, "message": "Connection test failed. Check server logs for details."},
+            status_code=500,
         )
 
 
@@ -473,8 +482,10 @@ async def test_edr(request: Request):
             }
         )
     except Exception as e:
+        logger.exception(f"EDR connection test failed: {e}")
         return JSONResponse(
-            content={"success": False, "message": str(e)}, status_code=500
+            content={"success": False, "message": "Connection test failed. Check server logs for details."},
+            status_code=500,
         )
 
 

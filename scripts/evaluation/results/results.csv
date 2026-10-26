@@ -1,0 +1,5 @@
+scenario,alert_id,runbook,duration_seconds,schema_valid,schema_failure_reason,warnings_count,exception
+malware_initial_triage,eval-malware-initial-triage,run_books/soc1/cases/malware_initial_triage.md,58.159,True,,2,
+suspicious_login_triage,eval-suspicious-login-triage,run_books/soc1/cases/suspicious_login_triage.md,29.864,True,,1,
+malware_deep_analysis,eval-malware-deep-analysis,run_books/soc2/cases/malware_deep_analysis.md,19.727,True,,2,
+suspicious_login_investigation,eval-suspicious-login-investigation,run_books/soc2/cases/suspicious_login_investigation.md,21.886,True,,1,

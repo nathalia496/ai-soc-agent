@@ -7,6 +7,7 @@ This module handles GraphQL requests to the OpenCTI API for hash lookups.
 from __future__ import annotations
 
 import json
+from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 import requests
@@ -17,33 +18,21 @@ from ....core.logging import get_logger
 logger = get_logger("sami.integrations.cti.opencti.http")
 
 
+@dataclass
 class OpenCTIHttpClient:
     """
     HTTP client for OpenCTI GraphQL API.
-    
+
     Handles hash lookups via GraphQL queries.
     """
 
-    def __init__(
-        self,
-        base_url: str,
-        api_key: str,
-        timeout_seconds: int = 30,
-        verify_ssl: bool = True,
-    ) -> None:
-        """
-        Initialize the OpenCTI HTTP client.
-        
-        Args:
-            base_url: Base URL of the OpenCTI API (e.g., "https://opencti.example.com")
-            api_key: API key/token for authentication
-            timeout_seconds: Request timeout in seconds
-            verify_ssl: Whether to verify SSL certificates
-        """
-        self.base_url = base_url.rstrip("/")
-        self.api_key = api_key
-        self.timeout_seconds = timeout_seconds
-        self.verify_ssl = verify_ssl
+    base_url: str
+    api_key: str
+    timeout_seconds: int = 30
+    verify_ssl: bool = True
+
+    def __post_init__(self) -> None:
+        self.base_url = self.base_url.rstrip("/")
         # OpenCTI's documented GraphQL API lives at /graphql (see
         # docs.opencti.io, "GraphQL API") - that's the primary endpoint.
         # /api/graphql is kept as a fallback only, in case some deployment
@@ -51,12 +40,12 @@ class OpenCTIHttpClient:
         # the primary endpoint.
         self.graphql_endpoint = f"{self.base_url}/graphql"
         self.graphql_endpoint_fallback = f"{self.base_url}/api/graphql"
-        
+
         logger.info(
             f"OpenCTI HTTP client initialized: base_url={self.base_url}, "
             f"primary_endpoint={self.graphql_endpoint}, "
             f"fallback_endpoint={self.graphql_endpoint_fallback}, "
-            f"timeout={timeout_seconds}s, verify_ssl={verify_ssl}"
+            f"timeout={self.timeout_seconds}s, verify_ssl={self.verify_ssl}"
         )
 
     def _headers(self) -> Dict[str, str]:
