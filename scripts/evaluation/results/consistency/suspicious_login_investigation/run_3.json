@@ -1,0 +1,179 @@
+{
+  "success": true,
+  "alert_id": "eval-suspicious-login-investigation",
+  "alert": {
+    "id": "eval-suspicious-login-investigation",
+    "title": "Critical: Suspected Account Compromise - Post-Authentication Anomalous Activity",
+    "severity": "critical",
+    "status": "open",
+    "priority": "critical",
+    "verdict": "",
+    "description": "Following the impossible-travel login flagged in case eval-suspicious-login-triage, user r.alvarez's session performed anomalous actions: a new MFA device was registered, a bulk download occurred from the finance SharePoint site, and an access attempt was made to the payroll admin console - all inconsistent with the user's normal behavior baseline.",
+    "created_at": "2026-02-03T04:40:00Z",
+    "updated_at": "2026-02-03T04:40:00Z",
+    "related_entities": [
+      "ip:198.51.100.23",
+      "ip:10.5.0.1",
+      "user:r.alvarez"
+    ],
+    "comments": [],
+    "detections": [
+      {
+        "id": "eval-suspicious-login-investigation",
+        "timestamp": "2026-02-03T04:40:00Z",
+        "severity": "critical",
+        "status": "open",
+        "description": "Following the impossible-travel login flagged in case eval-suspicious-login-triage, user r.alvarez's session performed anomalous actions: a new MFA device was registered, a bulk download occurred from the finance SharePoint site, and an access attempt was made to the payroll admin console - all inconsistent with the user's normal behavior baseline."
+      }
+    ],
+    "events": []
+  },
+  "logs": {
+    "success": true,
+    "alert_id": "eval-suspicious-login-investigation",
+    "query": "logs for alert eval-suspicious-login-investigation in [2026-02-03T04:10:00+00:00, 2026-02-03T05:10:00+00:00] matching host=vpn-gw-01, user=r.alvarez, source_ip=198.51.100.23, destination_ip=10.5.0.1",
+    "total_count": 4,
+    "returned_count": 4,
+    "events": [
+      {
+        "id": "eval-suspicious-login-investigation-log-0000",
+        "timestamp": "2026-02-03T04:15:00+00:00",
+        "source_type": "auth",
+        "message": "New MFA device registered for account r.alvarez (device: unrecognized Android handset)",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      },
+      {
+        "id": "eval-suspicious-login-investigation-log-0001",
+        "timestamp": "2026-02-03T04:22:00+00:00",
+        "source_type": "auth",
+        "message": "Bulk download initiated: 'Finance_Q4_Payroll.xlsx' and 11 other files from SharePoint site 'Finance-Shared'",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      },
+      {
+        "id": "eval-suspicious-login-investigation-log-0002",
+        "timestamp": "2026-02-03T04:35:00+00:00",
+        "source_type": "auth",
+        "message": "Access attempt to payroll admin console denied - insufficient privileges",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      },
+      {
+        "id": "eval-suspicious-login-investigation-log-0003",
+        "timestamp": "2026-02-03T04:38:00+00:00",
+        "source_type": "auth",
+        "message": "Session from 198.51.100.23 flagged by UEBA as high-risk; risk score 92/100",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      }
+    ]
+  },
+  "cti_results": {
+    "hash_lookups": [],
+    "ioc_lookups": []
+  },
+  "attack_matches": [
+    {
+      "technique_id": "T1098.005",
+      "technique_name": "Device Registration",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "score": 0.166
+    },
+    {
+      "technique_id": "T1195.001",
+      "technique_name": "Compromise Software Dependencies and Development Tools",
+      "tactics": [
+        "initial-access"
+      ],
+      "score": 0.1334
+    },
+    {
+      "technique_id": "T1556.006",
+      "technique_name": "Multi-Factor Authentication",
+      "tactics": [
+        "credential-access",
+        "defense-impairment",
+        "persistence"
+      ],
+      "score": 0.1301
+    },
+    {
+      "technique_id": "T1213.002",
+      "technique_name": "Sharepoint",
+      "tactics": [
+        "collection"
+      ],
+      "score": 0.1254
+    },
+    {
+      "technique_id": "T1621",
+      "technique_name": "Multi-Factor Authentication Request Generation",
+      "tactics": [
+        "credential-access"
+      ],
+      "score": 0.1057
+    }
+  ],
+  "report": {
+    "timeline": [
+      {
+        "timestamp": "2026-02-03T04:15:00+00:00",
+        "description": "New MFA device registered for account r.alvarez (device: unrecognized Android handset) (host=vpn-gw-01, username=r.alvarez, ip=198.51.100.23)"
+      },
+      {
+        "timestamp": "2026-02-03T04:22:00+00:00",
+        "description": "Bulk download initiated: 'Finance_Q4_Payroll.xlsx' and 11 other files from SharePoint site 'Finance-Shared' (host=vpn-gw-01, username=r.alvarez, ip=198.51.100.23)"
+      },
+      {
+        "timestamp": "2026-02-03T04:35:00+00:00",
+        "description": "Access attempt to payroll admin console denied - insufficient privileges (host=vpn-gw-01, username=r.alvarez, ip=198.51.100.23)"
+      },
+      {
+        "timestamp": "2026-02-03T04:38:00+00:00",
+        "description": "Session from 198.51.100.23 flagged by UEBA as high-risk; risk score 92/100 (host=vpn-gw-01, username=r.alvarez, ip=198.51.100.23)"
+      }
+    ],
+    "observables": [
+      {
+        "type": "ip",
+        "value": "198.51.100.23"
+      },
+      {
+        "type": "ip",
+        "value": "10.5.0.1"
+      },
+      {
+        "type": "user",
+        "value": "r.alvarez"
+      }
+    ],
+    "hypothesis": "The user's account has been compromised, likely through the use of stolen or forged MFA devices or credentials.",
+    "next_steps": [
+      "Verify the authenticity of the MFA device and the legitimacy of the login history.",
+      "Investigate the SharePoint downloads and determine if any sensitive data has been exfiltrated.",
+      "Check the VPN logs for any unusual activity and verify the user's VPN connection.",
+      "Notify the user and request a password reset and verify their login credentials."
+    ]
+  },
+  "stored_report": null,
+  "case_comment": null,
+  "warnings": [
+    "2 indicator(s) found but no MISP client configured"
+  ]
+}

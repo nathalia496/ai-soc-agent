@@ -1,0 +1,5 @@
+scenario,alert_id,duration_seconds,schema_valid,consistency_runs_schema_pass_rate,consistency_rating,analyst_agreement_rating,notes
+malware_initial_triage,eval-malware-initial-triage,55.397,True,5/5,1,FAIL (1/5),"Root cause contradicts itself across runs (vulnerability exploitation vs. insider admin vs. external actor); representative run hallucinates a 'software dependencies' narrative with no evidential basis"
+suspicious_login_triage,eval-suspicious-login-triage,41.473,True,5/5,2,3/5 (partial),"Most runs reference the Chicago/Lagos VPN movement, but the representative run omits the specific impossible-travel timing that is the actual alert trigger"
+malware_deep_analysis,eval-malware-deep-analysis,37.658,True,4/5,2,4/5 (pass),"Core claim (SMB lateral movement) consistent across successful runs; one run (5) adds an unsupported 'software dependencies' detail matching the same hallucination seen in malware_initial_triage"
+suspicious_login_investigation,eval-suspicious-login-investigation,43.747,True,4/5,2,5/5 (pass),"Representative run accurately names all three distinguishing anomalous actions (MFA registration, bulk download, escalation attempt)"

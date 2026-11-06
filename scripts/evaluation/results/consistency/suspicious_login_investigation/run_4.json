@@ -1,0 +1,5 @@
+{
+  "report": null,
+  "warnings": [],
+  "exception": "IntegrationError: Ollama report failed validation: Ollama report is missing required key(s): ['observables']. Got keys: ['timeline', ' observables', 'hypothesis', 'next_steps']"
+}
