@@ -123,6 +123,37 @@ def test_investigate_upstream_failure_returns_502(client, monkeypatch):
     assert response.status_code == 502
 
 
+def test_investigate_non_alert_not_found_error_returns_502(client, monkeypatch):
+    """
+    A "not found" message from somewhere other than the alert lookup (e.g. an
+    Ollama model that hasn't been pulled) must not be misclassified as the
+    alert itself being missing - only an IntegrationError that actually names
+    this alert_id as not found should become a 404.
+    """
+    mock_investigate = Mock(
+        side_effect=IntegrationError(
+            "Ollama request failed: 404 Client Error: Not Found for url: "
+            "http://ollama:11434/v1/chat/completions - "
+            "{'error': {'message': \"model 'llama3.2' not found\"}}"
+        )
+    )
+    monkeypatch.setattr(investigation_api, "investigate_alert", mock_investigate)
+
+    response = client.post("/investigate/verify-alert-0001", headers=_auth_headers())
+
+    assert response.status_code == 502
+
+
+def test_investigate_unexpected_exception_returns_500_without_leaking_details(client, monkeypatch):
+    mock_investigate = Mock(side_effect=ValueError("/internal/path/config.json: permission denied"))
+    monkeypatch.setattr(investigation_api, "investigate_alert", mock_investigate)
+
+    response = client.post("/investigate/verify-alert-0001", headers=_auth_headers())
+
+    assert response.status_code == 500
+    assert "/internal/path" not in response.json()["detail"]
+
+
 def test_investigate_without_siem_configured_returns_503(client, monkeypatch):
     monkeypatch.setattr(
         investigation_api,

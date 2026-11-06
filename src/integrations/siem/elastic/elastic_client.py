@@ -19,7 +19,7 @@ from ....api.siem import (
 )
 from ....core.config import SamiConfig
 from ....core.errors import IntegrationError
-from ....core.logging import get_logger
+from ....core.logging import get_logger, sanitize_for_log
 from .elastic_http import ElasticHttpClient
 
 logger = get_logger("sami.integrations.elastic.client")
@@ -1100,7 +1100,7 @@ class ElasticSIEMClient:
                         # Single comment as string or dict
                         comments.append(ai_comment)
             
-            logger.debug(f"Total comments found for alert {alert_id}: {len(comments)}")
+            logger.debug(f"Total comments found for alert {sanitize_for_log(alert_id)}: {len(comments)}")
             
             # Remove duplicates based on comment text and timestamp
             seen_comments = set()
@@ -1170,9 +1170,13 @@ class ElasticSIEMClient:
                 try:
                     ancestor_events = self._get_events_by_ids(ancestor_event_ids)
                     alert["events"] = ancestor_events
-                    logger.debug(f"Retrieved {len(ancestor_events)} ancestor events for alert {alert_id}")
+                    logger.debug(
+                        f"Retrieved {len(ancestor_events)} ancestor events for alert {sanitize_for_log(alert_id)}"
+                    )
                 except Exception as e:
-                    logger.warning(f"Failed to retrieve ancestor events for alert {alert_id}: {e}")
+                    logger.warning(
+                        f"Failed to retrieve ancestor events for alert {sanitize_for_log(alert_id)}: {e}"
+                    )
                     # Continue without events rather than failing the entire alert retrieval
                     alert["events"] = []
             else:
@@ -1217,7 +1221,7 @@ class ElasticSIEMClient:
             
             return hits[0].get("_source", {})
         except Exception as e:
-            logger.exception(f"Error getting raw alert document {alert_id}: {e}")
+            logger.exception(f"Error getting raw alert document {sanitize_for_log(alert_id)}: {e}")
             raise IntegrationError(f"Failed to get raw alert document: {e}") from e
 
     def get_logs_for_alert(
@@ -1386,7 +1390,7 @@ class ElasticSIEMClient:
         except IntegrationError:
             raise
         except Exception as e:
-            logger.exception(f"Error getting logs for alert {alert_id}: {e}")
+            logger.exception(f"Error getting logs for alert {sanitize_for_log(alert_id)}: {e}")
             raise IntegrationError(f"Failed to get logs for alert {alert_id}: {e}") from e
 
     def close_alert(

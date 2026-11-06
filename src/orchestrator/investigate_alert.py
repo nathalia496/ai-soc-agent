@@ -23,7 +23,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from ..core.errors import IntegrationError
-from ..core.logging import get_logger
+from ..core.logging import get_logger, sanitize_for_log
 from . import tools_attack, tools_case, tools_cti, tools_llm, tools_siem, tools_storage
 
 logger = get_logger("sami.orchestrator.investigate_alert")
@@ -115,7 +115,7 @@ def investigate_alert(
             client=siem_client,
         )
     except Exception as e:
-        logger.warning(f"Failed to fetch nearby logs for alert {alert_id}: {e}")
+        logger.warning(f"Failed to fetch nearby logs for alert {sanitize_for_log(alert_id)}: {e}")
         warnings.append(f"Failed to fetch nearby logs: {e}")
         logs_result = {"success": False, "events": [], "returned_count": 0}
 
@@ -136,7 +136,7 @@ def investigate_alert(
                 enrichment_text, mapper=attack_mapper, top_n=attack_top_n,
             ).get("matches", [])
         except Exception as e:
-            logger.warning(f"ATT&CK mapping failed for alert {alert_id}: {e}")
+            logger.warning(f"ATT&CK mapping failed for alert {sanitize_for_log(alert_id)}: {e}")
             warnings.append(f"ATT&CK mapping failed: {e}")
     else:
         warnings.append("ATT&CK mapper not configured; skipping technique mapping")
@@ -157,7 +157,7 @@ def investigate_alert(
                 client=storage_client,
             )
         except Exception as e:
-            logger.warning(f"Failed to persist investigation report for alert {alert_id}: {e}")
+            logger.warning(f"Failed to persist investigation report for alert {sanitize_for_log(alert_id)}: {e}")
             warnings.append(f"Failed to persist investigation report: {e}")
 
     # 8. Optionally attach the report to a case for human review. Never any
