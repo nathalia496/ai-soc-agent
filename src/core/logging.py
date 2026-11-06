@@ -126,3 +126,15 @@ def get_logger(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 
+def sanitize_for_log(value: object) -> str:
+    """
+    Escape CR/LF in a value before it's interpolated into a log message.
+
+    Callers use this to wrap identifiers that originate from a caller
+    (e.g. an alert_id from an API request) so that newline characters in
+    that input can't be used to forge additional, fake-looking log lines.
+    """
+
+    return str(value).replace("\r", "\\r").replace("\n", "\\n")
+
+

@@ -29,7 +29,7 @@ from pydantic import BaseModel
 from ..core.client_bootstrap import bootstrap_investigation_clients
 from ..core.config_storage import load_config_from_file
 from ..core.errors import ConfigError, IntegrationError
-from ..core.logging import get_logger
+from ..core.logging import get_logger, sanitize_for_log
 from ..orchestrator.investigate_alert import investigate_alert
 
 logger = get_logger(__name__)
@@ -142,8 +142,10 @@ async def investigate(alert_id: str, body: Optional[InvestigateRequest] = None) 
         # Log the full exception server-side only; the client gets a generic
         # message so internal details (exception text, integration internals)
         # never flow into the HTTP response.
-        logger.error(f"investigate_alert() failed for alert {alert_id}: {e}", exc_info=True)
-        if "not found" in str(e).lower():
+        logger.error(
+            f"investigate_alert() failed for alert {sanitize_for_log(alert_id)}: {e}", exc_info=True
+        )
+        if f"Alert {alert_id} not found" in str(e):
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Alert {alert_id} not found",
@@ -151,4 +153,16 @@ async def investigate(alert_id: str, body: Optional[InvestigateRequest] = None) 
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="Upstream integration error while investigating alert",
+        ) from e
+    except Exception as e:
+        # Catch-all so no unexpected exception's text (paths, upstream
+        # response bodies, stack details) ever reaches the HTTP response -
+        # only IntegrationError's two known shapes are handled above.
+        logger.error(
+            f"investigate_alert() raised an unexpected error for alert {sanitize_for_log(alert_id)}: {e}",
+            exc_info=True,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Unexpected error while investigating alert",
         ) from e
