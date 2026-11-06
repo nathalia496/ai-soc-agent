@@ -161,10 +161,51 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
 
 ### Prerequisites
 
-- Python 3.12 (the version this project's CI tests against)
-- pip package manager
+- Docker and Docker Compose, **or** Python 3.12 (the version this project's CI tests against) with pip, for a manual setup
 
-### Setup
+### Simplest: Docker Compose (all-in-one)
+
+`docker compose up` builds and runs the app alongside OpenSearch, Ollama, and PostgreSQL - no manual venv or `pip install` on the host.
+
+1. **Clone the repository and create your configuration file**:
+   ```bash
+   git clone <repository-url>
+   cd ai-soc-agent
+   cp config.json.example config.json
+   ```
+
+2. **Point `config.json` at the in-network service hostnames**, not `localhost` - the app
+   container reaches the other three over the Compose network by service name:
+   - `elastic.base_url` → `http://opensearch:9200`
+   - `ollama.base_url` → `http://ollama:11434/v1`
+   - `postgres.host` → `postgres`
+
+   Then fill in any real integration credentials you have (see Configuration section below).
+
+3. **Build and start everything**:
+   ```bash
+   docker compose up --build
+   ```
+   This starts `opensearch`, `ollama`, `postgres`, and `app` (the Investigation API, by
+   default - see `docker-compose.yml`'s `command:` for the other two entrypoints). Pull an
+   Ollama model before running an investigation (step 6 under Setup below still applies, e.g.
+   `docker exec attacklens-ollama ollama pull llama3.1`).
+
+4. **Run an investigation**:
+   ```bash
+   curl -X POST http://localhost:8000/investigate/<alert_id> \
+     -H "X-Admin-Secret: $ATTACKLENS_ADMIN_SECRET"
+   ```
+
+To run the MCP server or the AI Controller instead of the Investigation API, override the
+`app` service's `command:` in `docker-compose.yml` (or run `docker compose run app <cmd>`).
+The AI Controller also needs the `cursor-agent` binary, which isn't installed in the app
+image - see the "Optional: AI Controller" note in Quick Start above.
+
+### Manual setup (local dev/debugging)
+
+Prefer this over Docker when you want to run the app directly against a debugger, iterate
+without rebuilding an image, or don't want the infra containers.
 
 > **Shortcut:** steps 2-4 below (venv, dependencies, `config.json`) are automated by
 > `./scripts/setup.sh` after you clone the repo. It doesn't start PostgreSQL or Ollama (steps 5-6) -
@@ -207,7 +248,7 @@ The SOC2 case analysis workflow performs deep investigation, SIEM analysis, CTI 
 6. **Start Ollama and pull a model** (used to generate investigation reports):
    ```bash
    docker compose up -d ollama
-   docker exec soc-ollama ollama pull llama3.1
+   docker exec attacklens-ollama ollama pull llama3.1
    ```
    `docker compose up` does not pull a model automatically - this step is required before
    `generate_investigation_report` or `investigate_alert` will work. If you pull a different model than

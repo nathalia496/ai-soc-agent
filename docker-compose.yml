@@ -2,7 +2,7 @@ services:
   # 1. OpenSearch (SIEM Alert Source & Log Repository)
   opensearch:
     image: opensearchproject/opensearch:2.13.0
-    container_name: soc-opensearch
+    container_name: attacklens-opensearch
     environment:
       - cluster.name=soc-cluster
       - node.name=soc-node1
@@ -26,7 +26,7 @@ services:
   # 2. Ollama (Local LLM Server)
   ollama:
     image: ollama/ollama:latest
-    container_name: soc-ollama
+    container_name: attacklens-ollama
     ports:
       - "11434:11434"
     volumes:
@@ -36,7 +36,7 @@ services:
   # 3. PostgreSQL (Structured Storage for Cases and Reports)
   postgres:
     image: postgres:16-alpine
-    container_name: soc-postgres
+    container_name: attacklens-postgres
     environment:
       POSTGRES_DB: soc_copilot
       POSTGRES_USER: soc_user
@@ -45,6 +45,27 @@ services:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+
+  # 4. AttackLens app - runs the Investigation API by default. Override
+  # `command:` to run the MCP server or the AI Controller instead.
+  app:
+    build: .
+    container_name: attacklens-app
+    depends_on:
+      - opensearch
+      - ollama
+      - postgres
+    command: ["uvicorn", "src.web.investigation_api:app", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./config.json:/app/config.json:ro
+      # Uncomment if you use .env instead of/alongside config.json - omitted by
+      # default since Docker creates an empty directory at a missing bind-mount
+      # source, which would break config loading for anyone without one.
+      # - ./.env:/app/.env:ro
+    environment:
+      - ATTACKLENS_ADMIN_SECRET=${ATTACKLENS_ADMIN_SECRET:-admin}
 
 volumes:
   opensearch-data:
