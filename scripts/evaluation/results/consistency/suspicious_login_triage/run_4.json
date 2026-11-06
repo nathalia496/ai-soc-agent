@@ -1,0 +1,159 @@
+{
+  "success": true,
+  "alert_id": "eval-suspicious-login-triage",
+  "alert": {
+    "id": "eval-suspicious-login-triage",
+    "title": "Impossible Travel: Login From Unusual Location",
+    "severity": "medium",
+    "status": "open",
+    "priority": "medium",
+    "verdict": "",
+    "description": "User r.alvarez authenticated from an IP geolocated to a different country than a successful login 6 minutes earlier, with no travel plausible between the two locations.",
+    "created_at": "2026-02-03T03:11:00Z",
+    "updated_at": "2026-02-03T03:11:00Z",
+    "related_entities": [
+      "ip:198.51.100.23",
+      "ip:10.5.0.1",
+      "user:r.alvarez"
+    ],
+    "comments": [],
+    "detections": [
+      {
+        "id": "eval-suspicious-login-triage",
+        "timestamp": "2026-02-03T03:11:00Z",
+        "severity": "medium",
+        "status": "open",
+        "description": "User r.alvarez authenticated from an IP geolocated to a different country than a successful login 6 minutes earlier, with no travel plausible between the two locations."
+      }
+    ],
+    "events": []
+  },
+  "logs": {
+    "success": true,
+    "alert_id": "eval-suspicious-login-triage",
+    "query": "logs for alert eval-suspicious-login-triage in [2026-02-03T02:41:00+00:00, 2026-02-03T03:41:00+00:00] matching host=vpn-gw-01, user=r.alvarez, source_ip=198.51.100.23, destination_ip=10.5.0.1",
+    "total_count": 4,
+    "returned_count": 4,
+    "events": [
+      {
+        "id": "eval-suspicious-login-triage-log-0000",
+        "timestamp": "2026-02-03T02:51:00+00:00",
+        "source_type": "auth",
+        "message": "Failed login attempt for r.alvarez from 198.51.100.23 (invalid password)",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      },
+      {
+        "id": "eval-suspicious-login-triage-log-0001",
+        "timestamp": "2026-02-03T02:52:00+00:00",
+        "source_type": "auth",
+        "message": "Failed login attempt for r.alvarez from 198.51.100.23 (invalid password)",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      },
+      {
+        "id": "eval-suspicious-login-triage-log-0002",
+        "timestamp": "2026-02-03T03:05:00+00:00",
+        "source_type": "auth",
+        "message": "Successful VPN login for r.alvarez from 10.5.0.44 (geolocation: Chicago, US)",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "10.5.0.44",
+        "process_name": null,
+        "file_hash": null
+      },
+      {
+        "id": "eval-suspicious-login-triage-log-0003",
+        "timestamp": "2026-02-03T03:10:00+00:00",
+        "source_type": "auth",
+        "message": "Successful VPN login for r.alvarez from 198.51.100.23 (geolocation: Lagos, NG) - 6 minutes after prior login from Chicago, US",
+        "host": "vpn-gw-01",
+        "username": "r.alvarez",
+        "ip": "198.51.100.23",
+        "process_name": null,
+        "file_hash": null
+      }
+    ]
+  },
+  "cti_results": {
+    "hash_lookups": [],
+    "ioc_lookups": []
+  },
+  "attack_matches": [
+    {
+      "technique_id": "T1547.015",
+      "technique_name": "Login Items",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "score": 0.1796
+    },
+    {
+      "technique_id": "T1037.002",
+      "technique_name": "Login Hook",
+      "tactics": [
+        "persistence",
+        "privilege-escalation"
+      ],
+      "score": 0.1558
+    },
+    {
+      "technique_id": "T1056.003",
+      "technique_name": "Web Portal Capture",
+      "tactics": [
+        "collection",
+        "credential-access"
+      ],
+      "score": 0.1367
+    },
+    {
+      "technique_id": "T1195.001",
+      "technique_name": "Compromise Software Dependencies and Development Tools",
+      "tactics": [
+        "initial-access"
+      ],
+      "score": 0.1173
+    },
+    {
+      "technique_id": "T1614",
+      "technique_name": "System Location Discovery",
+      "tactics": [
+        "discovery"
+      ],
+      "score": 0.1145
+    }
+  ],
+  "report": {
+    "timeline": [
+      {
+        "timestamp": "2026-02-03T03:10:00+00:00",
+        "description": "Successful VPN login for r.alvarez from 198.51.100.23 (geolocation: Lagos, NG)"
+      }
+    ],
+    "observables": [
+      {
+        "type": "ip",
+        "value": "198.51.100.23"
+      }
+    ],
+    "hypothesis": "The attacker utilized VPN to move from Chicago, US to Lagos, NG within a short time frame, potentially for lateral movement or privilege escalation.",
+    "next_steps": [
+      "Verify IP geolocation history for vpn-gw-01 before and after the second successful login",
+      "Check VPN usage patterns and logs for indicative activity similar to the first attempt",
+      "Evaluate the user's access roles and permissions given the suspicious login behavior",
+      "Perform thorough analysis on VPN server access logs to potentially uncover additional activity"
+    ]
+  },
+  "stored_report": null,
+  "case_comment": null,
+  "warnings": [
+    "2 indicator(s) found but no MISP client configured"
+  ]
+}
